@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Filament\AdminPanelProvider;
+use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\WorkspaceResolve;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Foundation\Application;
@@ -19,8 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth' => Authenticate::class,
             'workspace' => WorkspaceResolve::class,
+            'admin' => EnsureUserIsAdmin::class,
         ]);
     })
+    ->withProviders([
+        AdminPanelProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

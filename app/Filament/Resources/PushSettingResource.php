@@ -7,14 +7,14 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PushSettingResource\Pages\EditPushSetting;
 use App\Models\PushSetting;
 use Filament\Forms;
-use Filament\Resources\Form;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
 
 class PushSettingResource extends Resource
 {
     protected static ?string $model = PushSetting::class;
 
-    protected static ?string $navigationGroup = 'Settings';
+    protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
     public static function form(Form $form): Form
     {
