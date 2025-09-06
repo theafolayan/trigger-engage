@@ -14,14 +14,16 @@ use function Pest\Laravel\postJson;
 
 uses(RefreshDatabase::class);
 
-function authHeaders(User $user, Workspace $workspace): array
-{
-    $token = $user->createToken('api')->plainTextToken;
+if (!function_exists('authHeaders')) {
+    function authHeaders(User $user, Workspace $workspace): array
+    {
+        $token = $user->createToken('api')->plainTextToken;
 
-    return [
-        'Authorization' => "Bearer {$token}",
-        'X-Workspace' => $workspace->slug,
-    ];
+        return [
+            'Authorization' => "Bearer {$token}",
+            'X-Workspace' => $workspace->slug,
+        ];
+    }
 }
 
 it('stores settings encrypting password', function (): void {
