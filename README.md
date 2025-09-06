@@ -37,6 +37,25 @@ Run the scheduler to process scheduled tasks:
 php artisan schedule:work
 ```
 
+To run the scheduler via cron in production, add:
+```cron
+* * * * * cd /path/to/trigger-engage && php artisan schedule:run >> /dev/null 2>&1
+```
+
+## Demo Data
+Seed a workspace with a contact, template, and automation:
+```bash
+php artisan make:demo
+```
+The command prints an API token and example requests:
+```bash
+curl -X POST http://localhost/api/events \
+  -H "Authorization: Bearer <token>" \
+  -H "X-Workspace: demo" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"signup","contact_email":"contact@example.com"}'
+```
+
 ## Testing
 Run the test suite using Pest via Artisan:
 ```bash
