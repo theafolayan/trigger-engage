@@ -9,10 +9,10 @@ use App\Filament\Resources\TemplateResource\Pages\EditTemplate;
 use App\Filament\Resources\TemplateResource\Pages\ListTemplates;
 use App\Models\Template;
 use Filament\Forms;
-use Filament\Resources\Form;
+use Filament\Forms\Form;
 use Filament\Resources\Resource;
-use Filament\Resources\Table;
 use Filament\Tables;
+use Filament\Tables\Table;
 
 class TemplateResource extends Resource
 {
