@@ -1,6 +1,16 @@
 # Trigger Engage
 
 Trigger Engage is an open-source, self-hosted, event-driven email automation tool built on Laravel.
+It lets you define reusable email workflows that react to arbitrary events and send templated messages.
+Workspaces isolate contacts, templates, and automations so multiple teams can share a single installation
+while keeping data separate.
+
+## Features
+- Event-driven workflow engine for automating emails.
+- Push notification delivery via drivers like Expo or OneSignal.
+- JSON:API compliant endpoints for integrating with any client.
+- Horizon-powered Redis queues and a scheduler for timed tasks.
+- Demo seeder and health check to explore the API quickly.
 
 ## Requirements
 - PHP 8.3+
@@ -41,6 +51,25 @@ To run the scheduler via cron in production, add:
 ```cron
 * * * * * cd /path/to/trigger-engage && php artisan schedule:run >> /dev/null 2>&1
 ```
+
+## Usage
+With queues and the scheduler running, send named events to the API to trigger automations.  
+Each event belongs to a workspace and may include contact information. Automations listen for these
+events and dispatch emails or other jobs through the queue.
+
+## Push Notifications
+To send pushes:
+1. Configure push settings for your workspace (Expo or OneSignal) via the Filament admin panel.
+2. Register device tokens for contacts:
+   ```bash
+   curl -X POST http://localhost/api/contacts/{contact_id}/device-tokens \
+     -H "Authorization: Bearer <token>" \
+     -H "X-Workspace: demo" \
+     -H "Content-Type: application/json" \
+     -d '{"token":"ExponentPushToken[xxx]","driver":"expo"}'
+   ```
+3. Add a **Send Push Notification** step to an automation with a templated title and body.
+4. Ingest events as shown above to queue and deliver the notification.
 
 ## Demo Data
 Seed a workspace with a contact, template, and automation:

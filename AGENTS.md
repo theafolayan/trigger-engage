@@ -1,11 +1,12 @@
 # Trigger Engage Guidelines
 
 ## Product Vision
-Trigger Engage is an open-source, self-hosted, event-driven email automation tool. It empowers teams to build and run email workflows on their own infrastructure.
+Trigger Engage is an open-source, self-hosted, event-driven messaging automation tool. It empowers teams to build and run email and push notification workflows on their own infrastructure.
+Workspaces keep contacts, templates, automations, and device tokens isolated, and events trigger those automations through a JSON:API interface.
 
 ## Architecture
 - **Domain**: Core business logic and aggregates.
-- **Services**: Cross-cutting services and integrations (mail, queue, etc.).
+- **Services**: Cross-cutting services and integrations (mail, push, queue, etc.).
 - **Http**: Controllers, requests, and routes.
 - **Middleware**: HTTP middleware.
 
@@ -20,3 +21,11 @@ Trigger Engage is an open-source, self-hosted, event-driven email automation too
 2. **Green** – write the minimal code to make the test pass.
 3. **Refactor** – improve the implementation while keeping tests green.
 Commit only when tests are green.
+
+## Getting Started
+1. `composer install` and `npm install` to fetch dependencies.
+2. Copy `.env.example` to `.env`, run `php artisan key:generate`, and configure PostgreSQL and Redis.
+3. Run migrations with `php artisan migrate` and seed demo data with `php artisan make:demo`.
+4. Start queues with `php artisan horizon` and the scheduler with `php artisan schedule:work`.
+5. Optional: configure push notification drivers (Expo or OneSignal) in Filament and register device tokens via the API.
+6. Use `php artisan serve` to run the app locally and `php artisan test` to execute the test suite.
