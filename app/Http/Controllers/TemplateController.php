@@ -9,6 +9,7 @@ use App\Models\Contact;
 use App\Models\Event;
 use App\Models\Template;
 use App\Services\Mail\MailerResolver;
+use App\Services\RateLimiter\TokenBucketLimiter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Symfony\Component\HttpFoundation\Response;
@@ -94,7 +95,7 @@ class TemplateController extends Controller
         return response()->json(['data' => $rendered]);
     }
 
-    public function test(Request $request, Template $template, MailerResolver $resolver): Response
+    public function test(Request $request, Template $template, MailerResolver $resolver, TokenBucketLimiter $limiter): Response
     {
         $data = $request->validate([
             'to' => ['required', 'email'],
@@ -112,6 +113,14 @@ class TemplateController extends Controller
             'html' => Blade::render($template->html, $context),
             'text' => Blade::render($template->text ?? '', $context),
         ];
+
+        if (! $limiter->consume(currentWorkspace()->id, (int) config('rate-limiter.per_minute'))) {
+            return response()->json([
+                'errors' => [
+                    ['title' => 'Rate limit exceeded'],
+                ],
+            ], 429);
+        }
 
         $mailer = $resolver->for(currentWorkspace());
         $mailer->to($data['to'])->queue(

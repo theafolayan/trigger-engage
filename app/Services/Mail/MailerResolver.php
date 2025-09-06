@@ -12,7 +12,7 @@ use Illuminate\Contracts\Mail\Mailer as MailerContract;
 use Illuminate\Contracts\Queue\Factory as QueueFactory;
 use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Mail\Mailer as IlluminateMailer;
-use Illuminate\Mail\Transport\NullTransport;
+use Symfony\Component\Mailer\Transport\NullTransport;
 
 class MailerResolver
 {
@@ -30,7 +30,10 @@ class MailerResolver
                 ->exists();
 
             if ($suppressed) {
-                return new IlluminateMailer('null', $this->views, new NullTransport(), $this->queue);
+                $mailer = new IlluminateMailer('null', $this->views, new NullTransport());
+                $mailer->setQueue($this->queue);
+
+                return $mailer;
             }
         }
 
