@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\AuthTokenController;
 use App\Http\Controllers\Api\V1\ContactController;
-use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
+use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\SmtpSettingsController;
 use App\Http\Controllers\Api\V1\StatsController;
 use App\Http\Controllers\Api\V1\TemplateController;
@@ -22,9 +22,8 @@ Route::middleware(['auth:sanctum', 'workspace'])->group(function (): void {
     Route::post('/smtp-settings', [SmtpSettingsController::class, 'store']);
     Route::post('/smtp-settings/test', [SmtpSettingsController::class, 'test']);
 
-    Route::post('/contacts', [ContactController::class, 'upsert']);
     Route::post('/contacts/import', [ContactController::class, 'bulkImport']);
-
+    Route::apiResource('contacts', ContactController::class);
     Route::post('/contacts/{contact}/device-tokens', [DeviceTokenController::class, 'store']);
     Route::delete('/contacts/{contact}/device-tokens/{token}', [DeviceTokenController::class, 'destroy']);
 
