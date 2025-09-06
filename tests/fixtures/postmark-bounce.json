@@ -1,0 +1,7 @@
+{
+  "MessageID": "example-id",
+  "RecordType": "Bounce",
+  "Type": "HardBounce",
+  "TypeCode": 1,
+  "Email": "example@example.com"
+}
