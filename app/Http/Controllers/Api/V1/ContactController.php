@@ -5,13 +5,51 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\Contact;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ContactController extends Controller
 {
+    public function index(): Response
+    {
+        $contacts = Contact::all()->map(fn (Contact $contact) => $this->transform($contact));
+
+        return response()->json(['data' => $contacts]);
+    }
+
+    public function store(Request $request): Response
+    {
+        return $this->upsert($request);
+    }
+
+    public function show(Contact $contact): Response
+    {
+        return response()->json(['data' => $this->transform($contact)]);
+    }
+
+    public function update(Request $request, Contact $contact): Response
+    {
+        $data = $request->validate([
+            'email' => ['sometimes', 'email'],
+            'first_name' => ['nullable', 'string'],
+            'last_name' => ['nullable', 'string'],
+            'attributes' => ['nullable', 'array'],
+        ]);
+
+        $contact->fill($data);
+        $contact->save();
+
+        return response()->json(['data' => $this->transform($contact)]);
+    }
+
+    public function destroy(Contact $contact): Response
+    {
+        $contact->delete();
+
+        return response()->noContent();
+    }
+
     public function upsert(Request $request): Response
     {
         $data = $request->validate([
@@ -52,7 +90,7 @@ class ContactController extends Controller
         foreach ($records as $index => $row) {
             $email = $row['email'] ?? null;
 
-            if (!is_string($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if (! is_string($email) || ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $errors[] = ['row' => $index, 'message' => 'Invalid email'];
 
                 continue;
