@@ -8,9 +8,9 @@ use Predis\Client;
 
 class TokenBucketLimiter
 {
-    private Client $client;
+    private $client;
 
-    public function __construct(?Client $client = null)
+    public function __construct($client = null)
     {
         $this->client = $client ?? new Client([
             'host' => env('REDIS_HOST', '127.0.0.1'),
@@ -23,7 +23,11 @@ class TokenBucketLimiter
         $key = "rate:" . $workspaceId;
         $now = microtime(true);
 
-        $stored = $this->client->get($key);
+        try {
+            $stored = $this->client->get($key);
+        } catch (\Throwable $e) {
+            return true;
+        }
         if ($stored === null) {
             $bucket = ['tokens' => $perMinute, 'time' => $now];
         } else {

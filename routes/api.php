@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\AuthTokenController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\SmtpSettingsController;
 use App\Http\Controllers\TemplateController;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,8 @@ Route::middleware(['auth:sanctum', 'workspace'])->group(function (): void {
 
     Route::post('/contacts', [ContactController::class, 'upsert']);
     Route::post('/contacts/import', [ContactController::class, 'bulkImport']);
+
+    Route::post('/contacts/{contact}/device-tokens', [DeviceTokenController::class, 'store']);
 
     Route::post('/events', [EventController::class, 'ingest']);
 

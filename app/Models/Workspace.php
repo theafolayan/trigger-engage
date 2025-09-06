@@ -33,6 +33,11 @@ class Workspace extends Model
         return $this->hasMany(SmtpSetting::class);
     }
 
+    public function pushSettings(): HasMany
+    {
+        return $this->hasMany(PushSetting::class);
+    }
+
     public function lists(): HasMany
     {
         return $this->hasMany(ContactList::class);
