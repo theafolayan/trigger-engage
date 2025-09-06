@@ -2,36 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\AuthTokenController;
-use App\Http\Controllers\ContactController;
-use App\Http\Controllers\EventController;
-use App\Http\Controllers\DeviceTokenController;
-use App\Http\Controllers\SmtpSettingsController;
-use App\Http\Controllers\StatsController;
-use App\Http\Controllers\TemplateController;
 use Illuminate\Support\Facades\Route;
 
-Route::post('/auth/token', AuthTokenController::class)->middleware('workspace');
-
-Route::middleware(['auth:sanctum', 'workspace'])->group(function (): void {
-    Route::get('/ping', function () {
-        return response()->json(['data' => ['pong' => true]]);
-    });
-
-    Route::get('/smtp-settings', [SmtpSettingsController::class, 'show']);
-    Route::post('/smtp-settings', [SmtpSettingsController::class, 'store']);
-    Route::post('/smtp-settings/test', [SmtpSettingsController::class, 'test']);
-
-    Route::post('/contacts', [ContactController::class, 'upsert']);
-    Route::post('/contacts/import', [ContactController::class, 'bulkImport']);
-
-    Route::post('/contacts/{contact}/device-tokens', [DeviceTokenController::class, 'store']);
-
-    Route::post('/events', [EventController::class, 'ingest']);
-
-    Route::apiResource('templates', TemplateController::class);
-    Route::post('/templates/{template}/preview', [TemplateController::class, 'preview']);
-    Route::post('/templates/{template}/test', [TemplateController::class, 'test']);
-
-    Route::middleware('admin')->get('/admin/stats', StatsController::class);
+Route::prefix('v1')->group(function (): void {
+    require __DIR__.'/api/v1.php';
 });
+

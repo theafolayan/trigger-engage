@@ -62,7 +62,7 @@ it('sends push notification when event ingested', function (): void {
         ],
     ]);
 
-    postJson('/api/events', [
+    postJson('/api/v1/events', [
         'name' => 'signup',
         'contact_email' => $contact->email,
     ], authHeaders($user, $workspace))->assertCreated();
