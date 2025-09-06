@@ -2,12 +2,18 @@
 
 declare(strict_types=1);
 
+use App\Enums\DeliveryStatus;
+use App\Filament\Widgets\StatsOverview;
+use App\Models\Contact;
+use App\Models\Delivery;
+use App\Models\Event;
 use App\Models\User;
 use App\Models\Workspace;
 use Filament\Auth\Pages\Login as FilamentLogin;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 
+use function Pest\Laravel\actingAs;
 use function Pest\Laravel\get;
 
 uses(RefreshDatabase::class);
@@ -20,6 +26,13 @@ it('allows admin to login and access panel', function (): void {
     $workspace = Workspace::factory()->create();
     $admin = User::factory()->for($workspace)->admin()->create();
 
+    $contact = Contact::factory()->for($workspace)->create();
+    Delivery::factory()->for($workspace)->for($contact)->create([
+        'status' => DeliveryStatus::Sent,
+        'sent_at' => now(),
+    ]);
+    Event::factory()->for($workspace)->for($contact)->create();
+
     Livewire::test(FilamentLogin::class)
         ->fillForm([
             'email' => $admin->email,
@@ -29,7 +42,15 @@ it('allows admin to login and access panel', function (): void {
         ->assertHasNoErrors()
         ->assertRedirect('/admin');
 
-    get('/admin')->assertOk();
+    actingAs($admin);
+
+    Livewire::test(StatsOverview::class)
+        ->assertSee('Contacts')
+        ->assertSee('1')
+        ->assertSee('Deliveries')
+        ->assertSee('1')
+        ->assertSee('Events')
+        ->assertSee('1');
 });
 
 it('blocks non-admin users', function (): void {
