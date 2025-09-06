@@ -3,10 +3,14 @@
 declare(strict_types=1);
 
 use App\Services\RateLimiter\TokenBucketLimiter;
-use Predis\Client;
-
 it('enforces per-minute caps', function (): void {
-    $client = new Client();
+    $client = new class {
+        public array $store = [];
+        public function get(string $key): ?string { return $this->store[$key] ?? null; }
+        public function setex(string $key, int $ttl, string $value): void { $this->store[$key] = $value; }
+        public function flushdb(): void { $this->store = []; }
+    };
+
     $client->flushdb();
 
     $limiter = new TokenBucketLimiter($client);

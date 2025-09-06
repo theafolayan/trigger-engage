@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use App\Models\Contact;
 use App\Services\TrackingToken;
+use App\Services\Push\PushManager;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
@@ -19,6 +20,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(TrackingToken::class, fn () => new TrackingToken(config('app.key')));
+        $this->app->singleton(PushManager::class);
     }
 
     /**

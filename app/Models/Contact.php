@@ -43,4 +43,9 @@ class Contact extends Model
     {
         return $this->hasMany(Event::class);
     }
+
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
 }
