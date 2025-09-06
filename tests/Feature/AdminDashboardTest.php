@@ -31,7 +31,7 @@ it('blocks non-admin users', function (): void {
         'is_admin' => false,
     ]);
 
-    $response = getJson('/api/admin/stats', authHeaders($user, $workspace));
+    $response = getJson('/api/v1/admin/stats', authHeaders($user, $workspace));
 
     $response->assertStatus(403);
 });
@@ -49,7 +49,7 @@ it('returns stats for admin', function (): void {
         'sent_at' => now(),
     ])->count(2)->create();
 
-    $response = getJson('/api/admin/stats', authHeaders($admin, $workspace));
+    $response = getJson('/api/v1/admin/stats', authHeaders($admin, $workspace));
 
     $response->assertOk()
         ->assertJsonPath('data.contacts.total', 3)

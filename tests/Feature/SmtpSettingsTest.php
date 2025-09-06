@@ -30,7 +30,7 @@ it('stores settings encrypting password', function (): void {
     $workspace = Workspace::factory()->create();
     $user = User::factory()->for($workspace)->create();
 
-    $response = postJson('/api/smtp-settings', [
+    $response = postJson('/api/v1/smtp-settings', [
         'host' => 'smtp.example.com',
         'port' => 587,
         'username' => 'jane',
@@ -55,7 +55,7 @@ it('shows masked password on fetch', function (): void {
         'password_encrypted' => encrypt('super-secret'),
     ]);
 
-    $response = getJson('/api/smtp-settings', authHeaders($user, $workspace));
+    $response = getJson('/api/v1/smtp-settings', authHeaders($user, $workspace));
 
     $response->assertOk()
         ->assertJsonPath('data.password', '********');
@@ -70,7 +70,7 @@ it('can test smtp settings sending mail', function (): void {
         'password_encrypted' => encrypt('secret'),
     ]);
 
-    $response = postJson('/api/smtp-settings/test', [
+    $response = postJson('/api/v1/smtp-settings/test', [
         'to' => 'test@example.com',
     ], authHeaders($user, $workspace));
 

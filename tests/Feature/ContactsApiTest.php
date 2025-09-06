@@ -27,7 +27,7 @@ it('upsert creates contact', function (): void {
     $workspace = Workspace::factory()->create();
     $user = User::factory()->for($workspace)->create();
 
-    $response = postJson('/api/contacts', [
+    $response = postJson('/api/v1/contacts', [
         'email' => 'jane@example.com',
         'first_name' => 'Jane',
     ], authHeaders($user, $workspace));
@@ -42,12 +42,12 @@ it('upsert updates existing contact on second call', function (): void {
     $workspace = Workspace::factory()->create();
     $user = User::factory()->for($workspace)->create();
 
-    postJson('/api/contacts', [
+    postJson('/api/v1/contacts', [
         'email' => 'jane@example.com',
         'first_name' => 'Jane',
     ], authHeaders($user, $workspace));
 
-    $response = postJson('/api/contacts', [
+    $response = postJson('/api/v1/contacts', [
         'email' => 'jane@example.com',
         'first_name' => 'Janet',
     ], authHeaders($user, $workspace));
@@ -69,7 +69,7 @@ it('bulk import returns counts', function (): void {
         ['email' => 'john@example.com', 'first_name' => 'John'],
     ];
 
-    $response = postJson('/api/contacts/import', $payload, authHeaders($user, $workspace));
+    $response = postJson('/api/v1/contacts/import', $payload, authHeaders($user, $workspace));
 
     $response->assertOk()
         ->assertJsonPath('data.created', 1)

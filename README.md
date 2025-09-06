@@ -62,7 +62,7 @@ To send pushes:
 1. Configure push settings for your workspace (Expo or OneSignal) via the Filament admin panel.
 2. Register device tokens for contacts:
    ```bash
-   curl -X POST http://localhost/api/contacts/{contact_id}/device-tokens \
+   curl -X POST http://localhost/api/v1/contacts/{contact_id}/device-tokens \
      -H "Authorization: Bearer <token>" \
      -H "X-Workspace: demo" \
      -H "Content-Type: application/json" \
@@ -78,7 +78,7 @@ php artisan make:demo
 ```
 The command prints an API token and example requests:
 ```bash
-curl -X POST http://localhost/api/events \
+curl -X POST http://localhost/api/v1/events \
   -H "Authorization: Bearer <token>" \
   -H "X-Workspace: demo" \
   -H "Content-Type: application/json" \

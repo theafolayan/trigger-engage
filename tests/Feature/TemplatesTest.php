@@ -33,7 +33,7 @@ it('crud works', function (): void {
     $workspace = Workspace::factory()->create();
     $user = User::factory()->for($workspace)->create();
 
-    $response = postJson('/api/templates', [
+    $response = postJson('/api/v1/templates', [
         'name' => 'Welcome',
         'subject' => 'Hello {{ $contact->first_name }}',
         'html' => '<p>Hi {{ $contact->first_name }}</p>',
@@ -45,14 +45,14 @@ it('crud works', function (): void {
 
     $id = $response->json('data.id');
 
-    $response = putJson("/api/templates/{$id}", [
+    $response = putJson("/api/v1/templates/{$id}", [
         'name' => 'Updated',
     ], authHeaders($user, $workspace));
 
     $response->assertOk()
         ->assertJsonPath('data.name', 'Updated');
 
-    $response = deleteJson("/api/templates/{$id}", [], authHeaders($user, $workspace));
+    $response = deleteJson("/api/v1/templates/{$id}", [], authHeaders($user, $workspace));
     $response->assertNoContent();
 
     expect(Template::count())->toBe(0);
@@ -71,7 +71,7 @@ it('preview substitutes variables', function (): void {
         'text' => 'Dear {{ $contact->first_name }}',
     ]);
 
-    $response = postJson("/api/templates/{$template->id}/preview", [
+    $response = postJson("/api/v1/templates/{$template->id}/preview", [
         'contact_id' => $contact->id,
         'event_id' => $event->id,
     ], authHeaders($user, $workspace));
@@ -95,7 +95,7 @@ it('test send enqueues mail', function (): void {
         'text' => 'Hello {{ $contact->first_name }}',
     ]);
 
-    $response = postJson("/api/templates/{$template->id}/test", [
+    $response = postJson("/api/v1/templates/{$template->id}/test", [
         'to' => 'test@example.com',
         'contact_id' => $contact->id,
         'event_id' => $event->id,

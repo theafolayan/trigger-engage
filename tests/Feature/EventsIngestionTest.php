@@ -32,7 +32,7 @@ it('stores event, links contact, and dispatches job', function (): void {
     $workspace = Workspace::factory()->create();
     $user = User::factory()->for($workspace)->create();
 
-    $response = postJson('/api/events', [
+    $response = postJson('/api/v1/events', [
         'name' => 'user.signed_up',
         'contact_email' => 'jane@example.com',
         'payload' => ['plan' => 'pro'],
