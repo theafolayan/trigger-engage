@@ -27,5 +27,12 @@ class DeviceTokenController extends Controller
 
         return response()->json(['data' => ['token' => $data['token']]], 201);
     }
+
+    public function destroy(Contact $contact, string $token): Response
+    {
+        $contact->deviceTokens()->where('token', $token)->firstOrFail()->delete();
+
+        return response()->noContent();
+    }
 }
 

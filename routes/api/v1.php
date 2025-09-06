@@ -26,6 +26,7 @@ Route::middleware(['auth:sanctum', 'workspace'])->group(function (): void {
     Route::post('/contacts/import', [ContactController::class, 'bulkImport']);
 
     Route::post('/contacts/{contact}/device-tokens', [DeviceTokenController::class, 'store']);
+    Route::delete('/contacts/{contact}/device-tokens/{token}', [DeviceTokenController::class, 'destroy']);
 
     Route::post('/events', [EventController::class, 'ingest']);
 
