@@ -14,7 +14,7 @@ use App\Models\Workspace;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Horizon\Horizon;
+// use Laravel\Horizon\Horizon;
 
 class StatsService
 {
@@ -25,9 +25,9 @@ class StatsService
      */
     public function totals(?Workspace $workspace = null): array
     {
-        $contactQuery = Contact::query()->when($workspace, fn ($q) => $q->where('workspace_id', $workspace->id));
-        $deliveryQuery = Delivery::query()->when($workspace, fn ($q) => $q->where('workspace_id', $workspace->id));
-        $eventQuery = Event::query()->when($workspace, fn ($q) => $q->where('workspace_id', $workspace->id));
+        $contactQuery = Contact::query()->when($workspace, fn($q) => $q->where('workspace_id', $workspace->id));
+        $deliveryQuery = Delivery::query()->when($workspace, fn($q) => $q->where('workspace_id', $workspace->id));
+        $eventQuery = Event::query()->when($workspace, fn($q) => $q->where('workspace_id', $workspace->id));
 
         $totalContacts = $contactQuery->count();
         $activeContacts = (clone $contactQuery)->where('status', ContactStatus::Active)->count();
@@ -86,7 +86,7 @@ class StatsService
         $start = Carbon::now()->subDays(29)->startOfDay();
 
         $query = Delivery::query()
-            ->when($workspace, fn ($q) => $q->where('workspace_id', $workspace->id))
+            ->when($workspace, fn($q) => $q->where('workspace_id', $workspace->id))
             ->whereNotNull('sent_at')
             ->where('sent_at', '>=', $start)
             ->selectRaw('date(sent_at) as day, count(*) as total')
@@ -106,7 +106,7 @@ class StatsService
         $start = Carbon::now()->subDays(29)->startOfDay();
 
         $base = Delivery::query()
-            ->when($workspace, fn ($q) => $q->where('workspace_id', $workspace->id))
+            ->when($workspace, fn($q) => $q->where('workspace_id', $workspace->id))
             ->whereIn('status', [DeliveryStatus::Bounced, DeliveryStatus::Complained])
             ->whereNotNull('sent_at')
             ->where('sent_at', '>=', $start)
@@ -140,7 +140,7 @@ class StatsService
     public function topAutomations(?Workspace $workspace = null): array
     {
         $query = Delivery::query()
-            ->when($workspace, fn ($q) => $q->where('workspace_id', $workspace->id))
+            ->when($workspace, fn($q) => $q->where('workspace_id', $workspace->id))
             ->whereNotNull('automation_id')
             ->selectRaw('automation_id, count(*) as total')
             ->groupBy('automation_id')
@@ -168,7 +168,7 @@ class StatsService
         return [
             'queue_size' => Queue::size(),
             'failed_jobs' => DB::table('failed_jobs')->count(),
-            'horizon_status' => Horizon::status(),
+            // 'horizon_status' => Horizon::status,
         ];
     }
 }

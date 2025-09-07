@@ -33,21 +33,22 @@ class AdminPanelProvider extends PanelProvider
                 'primary' => Color::Indigo,
             ])
             ->middleware([
-                EncryptCookies::class,
-                AddQueuedCookiesToResponse::class,
-                StartSession::class,
-                AuthenticateSession::class,
-                ShareErrorsFromSession::class,
-                VerifyCsrfToken::class,
-                SubstituteBindings::class,
-                DisableBladeIconComponents::class,
-                DispatchServingFilamentEvent::class,
+                'web'
+                // EncryptCookies::class,
+                // AddQueuedCookiesToResponse::class,
+                // StartSession::class,
+                // AuthenticateSession::class,
+                // ShareErrorsFromSession::class,
+                // VerifyCsrfToken::class,
+                // SubstituteBindings::class,
+                // DisableBladeIconComponents::class,
+                // DispatchServingFilamentEvent::class,
             ])
             ->authMiddleware([
                 Authenticate::class,
                 EnsureUserIsAdmin::class,
             ])
-            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
+            ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->pages([
                 Pages\Dashboard::class,
             ]);

@@ -9,6 +9,7 @@ use App\Models\SmtpSetting;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 
 class SmtpSettingResource extends Resource
 {
@@ -16,15 +17,15 @@ class SmtpSettingResource extends Resource
 
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             Forms\Components\TextInput::make('host')->required(),
             Forms\Components\TextInput::make('port')->numeric()->required(),
             Forms\Components\TextInput::make('username')->required(),
             Forms\Components\TextInput::make('password')
                 ->password()
-                ->afterStateHydrated(fn (Forms\Components\TextInput $component) => $component->state('')),
+                ->afterStateHydrated(fn(Forms\Components\TextInput $component) => $component->state('')),
             Forms\Components\TextInput::make('encryption'),
             Forms\Components\TextInput::make('from_name'),
             Forms\Components\TextInput::make('from_email')->email()->required(),

@@ -11,6 +11,7 @@ use App\Models\Template;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
 
@@ -18,9 +19,9 @@ class TemplateResource extends Resource
 {
     protected static ?string $model = Template::class;
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form->schema([
+        return $schema->components([
             Forms\Components\TextInput::make('name')->required(),
             Forms\Components\TextInput::make('subject')->required(),
             Forms\Components\Textarea::make('html')->rows(10)->required(),
