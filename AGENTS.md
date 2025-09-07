@@ -3,6 +3,7 @@
 ## Product Vision
 Trigger Engage is an open-source, self-hosted, event-driven messaging automation tool. It empowers teams to build and run email and push notification workflows on their own infrastructure.
 Workspaces keep contacts, templates, automations, and device tokens isolated, and events trigger those automations through a JSON:API interface.
+Accounts group workspaces and users. Subscription plans define feature flags and usage quotas, with monthly counters tracking emails, events, and contacts per workspace.
 
 ## Architecture
 - **Domain**: Core business logic and aggregates.
@@ -28,7 +29,8 @@ Commit only when tests are green.
 3. Run migrations with `php artisan migrate` and seed demo data with `php artisan make:demo`.
 4. Start queues with `php artisan horizon` and the scheduler with `php artisan schedule:work`.
 5. Optional: configure push notification drivers (Expo or OneSignal) in Filament and register device tokens via the API.
-6. Use `php artisan serve` to run the app locally and `php artisan test` to execute the test suite.
+6. Run `php artisan usage:reset` monthly if you need to clear usage counters.
+7. Use `php artisan serve` to run the app locally and `php artisan test` to execute the test suite.
 
 ## Documentation
 - API docs live under `docs/api`.

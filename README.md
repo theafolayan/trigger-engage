@@ -3,13 +3,16 @@
 Trigger Engage is an open-source, self-hosted, event-driven email automation tool built on Laravel.
 It lets you define reusable email workflows that react to arbitrary events and send templated messages.
 Workspaces isolate contacts, templates, and automations so multiple teams can share a single installation
-while keeping data separate.
+while keeping data separate. Workspaces belong to accounts which subscribe to plans that enable
+features and enforce monthly usage quotas.
 
 ## Features
 - Event-driven workflow engine for automating emails.
 - Push notification delivery via drivers like Expo or OneSignal.
 - JSON:API compliant endpoints for integrating with any client.
 - Horizon-powered Redis queues and a scheduler for timed tasks.
+- Multi-tenant accounts with subscription plans and feature flags.
+- Monthly usage tracking for emails, events, and contacts with quota enforcement.
 - Demo seeder and health check to explore the API quickly.
 
 ## Requirements
@@ -56,6 +59,14 @@ To run the scheduler via cron in production, add:
 With queues and the scheduler running, send named events to the API to trigger automations.  
 Each event belongs to a workspace and may include contact information. Automations listen for these
 events and dispatch emails or other jobs through the queue.
+
+## Accounts & Plans
+Workspaces are grouped under accounts. Accounts subscribe to plans which define feature flags and
+monthly quotas for emails, events, and contacts. Usage counters track consumption per workspace and
+reset automatically at the start of each month. Run `php artisan usage:reset` if you need to clear
+counters manually. Migrations seed Free (2k emails/mo), Pro (100k), and Enterprise (unlimited)
+plans.
+
 ## API Documentation
 All API requests require an `Authorization: Bearer <token>` header and an `X-Workspace` header specifying the workspace.
 See [docs/api](docs/api) for detailed endpoint guides.
