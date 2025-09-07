@@ -26,6 +26,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         AdminPanelProvider::class,
+        \App\Providers\AuthDebugServiceProvider::class,
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
