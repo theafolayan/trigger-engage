@@ -22,7 +22,7 @@ class AuthTokenController extends Controller
 
         $workspace = currentWorkspace();
 
-        $user = User::where('workspace_id', $workspace->id)
+        $user = User::where('account_id', $workspace->account_id)
             ->where('email', $credentials['email'])
             ->first();
 

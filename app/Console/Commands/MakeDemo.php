@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Enums\AutomationStepKind;
+use App\Models\Account;
 use App\Models\Automation;
 use App\Models\AutomationStep;
 use App\Models\Contact;
+use App\Models\Plan;
 use App\Models\SmtpSetting;
 use App\Models\Template;
 use App\Models\User;
@@ -23,13 +25,21 @@ class MakeDemo extends Command
 
     public function handle(): int
     {
+        $plan = Plan::where('name', 'Free')->first();
+        $account = Account::create([
+            'name' => 'Demo Account',
+            'subscription_plan_id' => $plan->id,
+        ]);
+
         $workspace = Workspace::create([
+            'account_id' => $account->id,
             'name' => 'Demo Workspace',
             'slug' => 'demo',
         ]);
 
         $user = User::create([
             'workspace_id' => $workspace->id,
+            'account_id' => $account->id,
             'name' => 'Demo User',
             'email' => 'demo@example.com',
             'password' => 'password',

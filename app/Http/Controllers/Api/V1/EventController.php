@@ -37,6 +37,7 @@ class EventController extends Controller
                     'workspace_id' => currentWorkspace()->id,
                     'email' => $data['contact_email'],
                 ]);
+                app(\App\Services\UsageTracker::class)->recordContactsCreated(currentWorkspace());
             }
         }
 
@@ -49,6 +50,8 @@ class EventController extends Controller
                 ? Carbon::parse($data['occurred_at'])
                 : now(),
         ]);
+
+        app(\App\Services\UsageTracker::class)->recordEventsIngested(currentWorkspace());
 
         ProcessEvent::dispatch($event);
 

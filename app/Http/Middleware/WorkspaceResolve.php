@@ -33,6 +33,16 @@ class WorkspaceResolve
             ], 404);
         }
 
+        $user = $request->user();
+
+        if ($user !== null && $user->account_id !== $workspace->account_id) {
+            return response()->json([
+                'errors' => [
+                    ['status' => '403', 'title' => 'Forbidden'],
+                ],
+            ], 403);
+        }
+
         app()->instance('currentWorkspace', $workspace);
 
         return $next($request);

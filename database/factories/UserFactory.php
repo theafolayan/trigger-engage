@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Workspace;
@@ -26,6 +28,7 @@ class UserFactory extends Factory
     {
         return [
             'workspace_id' => Workspace::factory(),
+            'account_id' => null,
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -50,5 +53,19 @@ class UserFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'is_admin' => true,
         ]);
+    }
+
+    public function configure(): static
+    {
+        return $this->afterMaking(function ($user) {
+            if ($user->workspace_id && $user->account_id === null) {
+                $user->account_id = $user->workspace->account_id;
+            }
+        })->afterCreating(function ($user) {
+            if ($user->workspace_id && $user->account_id === null) {
+                $user->account_id = $user->workspace->account_id;
+                $user->save();
+            }
+        });
     }
 }

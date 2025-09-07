@@ -31,7 +31,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user) {
             $workspace = currentWorkspace();
 
-            if ($workspace !== null && $user->workspace_id !== $workspace->id) {
+            if ($workspace !== null && $user->account_id !== $workspace->account_id) {
                 return false;
             }
 

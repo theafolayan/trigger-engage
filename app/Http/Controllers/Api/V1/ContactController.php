@@ -71,6 +71,10 @@ class ContactController extends Controller
             ],
         );
 
+        if ($contact->wasRecentlyCreated) {
+            app(\App\Services\UsageTracker::class)->recordContactsCreated(currentWorkspace());
+        }
+
         return response()->json(
             ['data' => $this->transform($contact)],
             $contact->wasRecentlyCreated ? 201 : 200,
@@ -113,6 +117,7 @@ class ContactController extends Controller
 
             if ($contact->wasRecentlyCreated) {
                 $created++;
+                app(\App\Services\UsageTracker::class)->recordContactsCreated(currentWorkspace());
 
                 continue;
             }
