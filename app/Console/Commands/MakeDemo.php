@@ -84,7 +84,7 @@ class MakeDemo extends Command
         $this->line("API token: {$token}");
         $this->line('');
         $this->line('Example curl to trigger event:');
-        $this->line('curl -X POST http://localhost/api/events \\');
+        $this->line('curl -X POST http://localhost/api/v1/events \\');
         $this->line("  -H \"Authorization: Bearer {$token}\" \\");
         $this->line('  -H "X-Workspace: demo" \\');
         $this->line('  -H "Content-Type: application/json" \\');

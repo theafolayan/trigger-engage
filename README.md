@@ -56,13 +56,16 @@ To run the scheduler via cron in production, add:
 With queues and the scheduler running, send named events to the API to trigger automations.  
 Each event belongs to a workspace and may include contact information. Automations listen for these
 events and dispatch emails or other jobs through the queue.
+## API Documentation
+All API requests require an `Authorization: Bearer <token>` header and an `X-Workspace` header specifying the workspace.
+See [docs/api](docs/api) for detailed endpoint guides.
 
 ## Push Notifications
 To send pushes:
 1. Configure push settings for your workspace (Expo or OneSignal) via the Filament admin panel.
 2. Register device tokens for contacts:
    ```bash
-   curl -X POST http://localhost/api/contacts/{contact_id}/device-tokens \
+   curl -X POST http://localhost/api/v1/contacts/{contact_id}/device-tokens \
      -H "Authorization: Bearer <token>" \
      -H "X-Workspace: demo" \
      -H "Content-Type: application/json" \
@@ -78,7 +81,7 @@ php artisan make:demo
 ```
 The command prints an API token and example requests:
 ```bash
-curl -X POST http://localhost/api/events \
+curl -X POST http://localhost/api/v1/events \
   -H "Authorization: Bearer <token>" \
   -H "X-Workspace: demo" \
   -H "Content-Type: application/json" \
@@ -99,6 +102,16 @@ php artisan serve
 # in another terminal
 curl http://localhost:8000/health
 ```
+
+## Contributing
+Pull requests are welcome! To contribute:
+1. Fork the repository and create a feature branch.
+2. Install dependencies with `composer install` and `npm install`.
+3. Copy `.env.example` to `.env`, generate an app key, and configure PostgreSQL and Redis.
+4. Run `php artisan migrate` and seed demo data if needed.
+5. Follow the [TDD Workflow](AGENTS.md#tdd-workflow) and ensure `php artisan test` passes.
+6. Adhere to the [coding conventions](AGENTS.md#coding-conventions) and document new endpoints under `docs/api`.
+7. Submit a pull request describing your changes.
 
 ## License
 MIT

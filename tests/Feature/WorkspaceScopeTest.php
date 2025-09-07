@@ -14,18 +14,18 @@ it('requires token and workspace header', function (): void {
     $user = User::factory()->for($workspace)->create();
     $token = $user->createToken('api')->plainTextToken;
 
-    getJson('/api/ping')->assertUnauthorized();
+    getJson('/api/v1/ping')->assertUnauthorized();
 
-    getJson('/api/ping', ['Authorization' => 'Bearer '.$token])
+    getJson('/api/v1/ping', ['Authorization' => 'Bearer '.$token])
         ->assertStatus(400);
 
     $this->flushHeaders();
     auth()->forgetGuards();
 
-    getJson('/api/ping', ['X-Workspace' => $workspace->slug])
+    getJson('/api/v1/ping', ['X-Workspace' => $workspace->slug])
         ->assertUnauthorized();
 
-    getJson('/api/ping', [
+    getJson('/api/v1/ping', [
         'Authorization' => 'Bearer '.$token,
         'X-Workspace' => $workspace->slug,
     ])->assertOk();

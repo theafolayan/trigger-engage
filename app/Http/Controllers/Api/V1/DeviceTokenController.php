@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Api\V1;
+
+use App\Http\Controllers\Controller;
 
 use App\Models\Contact;
 use Illuminate\Http\Request;
@@ -24,6 +26,13 @@ class DeviceTokenController extends Controller
         );
 
         return response()->json(['data' => ['token' => $data['token']]], 201);
+    }
+
+    public function destroy(Contact $contact, string $token): Response
+    {
+        $contact->deviceTokens()->where('token', $token)->firstOrFail()->delete();
+
+        return response()->noContent();
     }
 }
 

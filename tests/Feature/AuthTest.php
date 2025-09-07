@@ -15,7 +15,7 @@ it('can request token with email/password', function (): void {
         'password' => bcrypt('secret'),
     ]);
 
-    $response = postJson('/api/auth/token', [
+    $response = postJson('/api/v1/auth/token', [
         'email' => $user->email,
         'password' => 'secret',
     ], ['X-Workspace' => $workspace->slug]);

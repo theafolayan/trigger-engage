@@ -29,3 +29,8 @@ Commit only when tests are green.
 4. Start queues with `php artisan horizon` and the scheduler with `php artisan schedule:work`.
 5. Optional: configure push notification drivers (Expo or OneSignal) in Filament and register device tokens via the API.
 6. Use `php artisan serve` to run the app locally and `php artisan test` to execute the test suite.
+
+## Documentation
+- API docs live under `docs/api`.
+- Document endpoints with JSON:API request/response examples and note required `Authorization` and `X-Workspace` headers.
+- Cross-link related sections for discoverability.
