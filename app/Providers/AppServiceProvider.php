@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Models\Contact;
-use App\Services\TrackingToken;
 use App\Services\Push\PushManager;
+use App\Services\TrackingToken;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -37,6 +40,9 @@ class AppServiceProvider extends ServiceProvider
 
             return null;
         });
+
+        RateLimiter::for('login', fn (Request $request) => [Limit::perMinute(5)->by($request->ip())]);
+        RateLimiter::for('refresh', fn (Request $request) => [Limit::perMinute(10)->by($request->ip())]);
 
         Event::listen(MessageSending::class, function (MessageSending $event): void {
             $to = $event->message->getTo();
