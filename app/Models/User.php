@@ -26,6 +26,7 @@ class User extends Authenticatable implements FilamentUser
      */
     protected $fillable = [
         'workspace_id',
+        'account_id',
         'name',
         'email',
         'password',
@@ -59,6 +60,11 @@ class User extends Authenticatable implements FilamentUser
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class);
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
     public function canAccessPanel(Panel $panel): bool
     {
