@@ -17,7 +17,7 @@ class HorizonHealthWidget extends BaseWidget
         return [
             Stat::make('Queue', (string) $health['queue_size']),
             Stat::make('Failed Jobs', (string) $health['failed_jobs']),
-            Stat::make('Horizon', (string) $health['horizon_status']),
+            // Stat::make('Horizon', (string) $health['horizon_status']),
         ];
     }
 }
