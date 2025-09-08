@@ -12,9 +12,9 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
-use Filament\Pages;
 use Filament\Support\Colors\Color;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -60,7 +60,7 @@ class AdminPanelProvider extends PanelProvider
                     ->form([
                         Select::make('workspace')
                             ->label('Workspace')
-                            ->options(fn () => auth()->user()?->account->workspaces->pluck('name', 'slug')->toArray())
+                            ->options(fn (): array => auth()->user()?->account?->workspaces()?->pluck('name', 'slug')?->toArray() ?? [])
                             ->default(fn (): ?string => session('workspace')),
                     ])
                     ->action(function (array $data, Request $request): void {
