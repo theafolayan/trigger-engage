@@ -13,7 +13,15 @@ class WorkspaceResolve
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $slug = $request->header('X-Workspace');
+        $slug = $request->header('X-Workspace')
+            ?? ($request->hasSession() ? $request->session()->get('workspace') : null);
+
+        if ($slug === null && ($user = $request->user()) !== null && $request->hasSession()) {
+            $slug = $user->workspace()->value('slug');
+            if ($slug !== null) {
+                $request->session()->put('workspace', $slug);
+            }
+        }
 
         if ($slug === null) {
             return response()->json([
