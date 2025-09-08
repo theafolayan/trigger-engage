@@ -16,7 +16,9 @@ class WorkspaceResolve
         $slug = $request->header('X-Workspace')
             ?? ($request->hasSession() ? $request->session()->get('workspace') : null);
 
-        if ($slug === null && ($user = $request->user()) !== null && $request->hasSession()) {
+        $user = $request->user();
+
+        if ($slug === null && $user !== null && $request->hasSession()) {
             $slug = $user->workspace()->value('slug');
             if ($slug !== null) {
                 $request->session()->put('workspace', $slug);
@@ -24,6 +26,10 @@ class WorkspaceResolve
         }
 
         if ($slug === null) {
+            if ($user === null) {
+                return $next($request);
+            }
+
             return response()->json([
                 'errors' => [
                     ['status' => '400', 'title' => 'Workspace header missing'],
