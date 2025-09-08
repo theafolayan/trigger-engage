@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('plans', function (Blueprint $table): void {
             $table->id();
             $table->string('name');
-            $table->json('features')->default(json_encode([]));
+            $table->json('features');
             $table->unsignedInteger('email_quota')->nullable();
             $table->unsignedInteger('event_quota')->nullable();
             $table->unsignedInteger('contact_quota')->nullable();
