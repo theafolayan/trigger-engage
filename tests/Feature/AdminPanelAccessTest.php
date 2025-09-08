@@ -98,3 +98,15 @@ it('blocks non-admin users', function (): void {
 
     get('/admin')->assertStatus(403);
 });
+
+
+it('shows settings navigation items', function (): void {
+    $workspace = Workspace::factory()->create();
+    $admin = User::factory()->for($workspace)->admin()->create();
+
+    actingAs($admin);
+
+    get('/admin')
+        ->assertSee('Smtp Settings')
+        ->assertSee('Push Settings');
+});
