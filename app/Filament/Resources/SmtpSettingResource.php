@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\SmtpSettingResource\Pages\CreateSmtpSetting;
 use App\Filament\Resources\SmtpSettingResource\Pages\EditSmtpSetting;
+use App\Filament\Resources\SmtpSettingResource\Pages\ListSmtpSettings;
 use App\Models\SmtpSetting;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
 
 class SmtpSettingResource extends Resource
 {
@@ -34,10 +38,20 @@ class SmtpSettingResource extends Resource
         ]);
     }
 
+    public static function table(Table $table): Table
+    {
+        return $table->columns([
+            Tables\Columns\TextColumn::make('from_email'),
+            Tables\Columns\TextColumn::make('host'),
+        ]);
+    }
+
     public static function getPages(): array
     {
         return [
-            'edit' => EditSmtpSetting::route('/smtp-settings'),
+            'index' => ListSmtpSettings::route('/smtp-settings'),
+            'create' => CreateSmtpSetting::route('/smtp-settings/create'),
+            'edit' => EditSmtpSetting::route('/smtp-settings/{record}/edit'),
         ];
     }
 }

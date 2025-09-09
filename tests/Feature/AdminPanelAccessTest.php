@@ -48,6 +48,10 @@ it('redirects guests to login', function (): void {
     get('/admin')->assertRedirect('/admin/login');
 });
 
+it('shows login page without workspace header', function (): void {
+    get('/admin/login')->assertOk();
+});
+
 it('allows admin to login and access panel', function (): void {
     $workspace = Workspace::factory()->create();
     $admin = User::factory()->for($workspace)->admin()->create();
@@ -93,4 +97,16 @@ it('blocks non-admin users', function (): void {
         ->assertRedirect('/admin');
 
     get('/admin')->assertStatus(403);
+});
+
+
+it('shows settings navigation items', function (): void {
+    $workspace = Workspace::factory()->create();
+    $admin = User::factory()->for($workspace)->admin()->create();
+
+    actingAs($admin);
+
+    get('/admin')
+        ->assertSee('Smtp Settings')
+        ->assertSee('Push Settings');
 });

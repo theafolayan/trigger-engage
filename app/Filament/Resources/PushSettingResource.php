@@ -1,12 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\PushSettingResource\Pages\CreatePushSetting;
 use App\Filament\Resources\PushSettingResource\Pages\EditPushSetting;
+use App\Filament\Resources\PushSettingResource\Pages\ListPushSettings;
 use App\Models\PushSetting;
 use Filament\Resources\Resource;
 use Filament\Forms;
 use Filament\Schemas\Schema;
+use Filament\Tables;
+use Filament\Tables\Table;
 
 
 
@@ -34,10 +40,20 @@ class PushSettingResource extends Resource
         ]);
     }
 
+    public static function table(Table $table): Table
+    {
+        return $table->columns([
+            Tables\Columns\TextColumn::make('driver'),
+            Tables\Columns\IconColumn::make('is_active')->boolean(),
+        ]);
+    }
+
     public static function getPages(): array
     {
         return [
-            'edit' => EditPushSetting::route('/push-settings'),
+            'index' => ListPushSettings::route('/push-settings'),
+            'create' => CreatePushSetting::route('/push-settings/create'),
+            'edit' => EditPushSetting::route('/push-settings/{record}/edit'),
         ];
     }
 }
