@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\PushSettingResource\Pages\CreatePushSetting;
 use App\Filament\Resources\PushSettingResource\Pages\EditPushSetting;
 use App\Filament\Resources\PushSettingResource\Pages\ListPushSettings;
 use App\Models\PushSetting;
@@ -49,6 +52,7 @@ class PushSettingResource extends Resource
     {
         return [
             'index' => ListPushSettings::route('/push-settings'),
+            'create' => CreatePushSetting::route('/push-settings/create'),
             'edit' => EditPushSetting::route('/push-settings/{record}/edit'),
         ];
     }

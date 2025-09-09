@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\SmtpSettingResource\Pages\CreateSmtpSetting;
 use App\Filament\Resources\SmtpSettingResource\Pages\EditSmtpSetting;
 use App\Filament\Resources\SmtpSettingResource\Pages\ListSmtpSettings;
 use App\Models\SmtpSetting;
@@ -49,6 +50,7 @@ class SmtpSettingResource extends Resource
     {
         return [
             'index' => ListSmtpSettings::route('/smtp-settings'),
+            'create' => CreateSmtpSetting::route('/smtp-settings/create'),
             'edit' => EditSmtpSetting::route('/smtp-settings/{record}/edit'),
         ];
     }
