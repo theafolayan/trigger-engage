@@ -12,6 +12,8 @@ use App\Filament\Resources\AutomationResource\Pages\ListAutomations;
 use App\Models\Automation;
 use App\Models\AutomationStep;
 use Filament\Forms;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
 use Filament\Schemas\Components\Section;
@@ -82,11 +84,54 @@ class AutomationResource extends Resource
                             Forms\Components\Select::make('kind')
                                 ->label('Kind')
                                 ->options(self::stepKindOptions())
-                                ->required(),
-                            Forms\Components\Textarea::make('config')
-                                ->label('Config (JSON)')
-                                ->rows(4)
-                                ->helperText('Provide configuration specific to the step type.'),
+                                ->required()
+                                ->reactive()
+                                ->afterStateUpdated(function (Set $set): void {
+                                    $set('config', []);
+                                }),
+                            Forms\Components\Group::make()
+                                ->schema([
+                                    Forms\Components\Select::make('config.template_id')
+                                        ->label('Template')
+                                        ->relationship('workspace.templates', 'name')
+                                        ->searchable()
+                                        ->preload()
+                                        ->required(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendEmail->value)
+                                        ->helperText('Choose the template to send for this step.'),
+                                ])
+                                ->visible(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendEmail->value)
+                                ->columnSpan(2),
+                            Forms\Components\Group::make()
+                                ->schema([
+                                    Forms\Components\TextInput::make('config.minutes')
+                                        ->label('Delay (minutes)')
+                                        ->integer()
+                                        ->minValue(0)
+                                        ->required(fn (Get $get): bool => $get('kind') === AutomationStepKind::Delay->value)
+                                        ->helperText('Number of minutes to wait before continuing.'),
+                                ])
+                                ->visible(fn (Get $get): bool => $get('kind') === AutomationStepKind::Delay->value)
+                                ->columnSpan(2),
+                            Forms\Components\Group::make()
+                                ->schema([
+                                    Forms\Components\TextInput::make('config.title')
+                                        ->label('Title')
+                                        ->maxLength(255)
+                                        ->required(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendPushNotification->value),
+                                    Forms\Components\Textarea::make('config.body')
+                                        ->label('Body')
+                                        ->rows(3)
+                                        ->required(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendPushNotification->value),
+                                    Forms\Components\KeyValue::make('config.data')
+                                        ->label('Payload Data')
+                                        ->helperText('Optional key-value payload delivered with the notification.')
+                                        ->nullable()
+                                        ->keyLabel('Key')
+                                        ->valueLabel('Value')
+                                        ->columnSpan(2),
+                                ])
+                                ->visible(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendPushNotification->value)
+                                ->columnSpan(2),
                             Forms\Components\TextInput::make('next_step_uid')
                                 ->label('Next Step UID')
                                 ->maxLength(255),
@@ -160,20 +205,42 @@ class AutomationResource extends Resource
             ->map(static function (AutomationStep $step): array {
                 $config = $step->config;
 
-                if (is_array($config)) {
-                    $config = json_encode($config, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '';
+                if (! is_array($config)) {
+                    $config = [];
                 }
 
                 return [
                     'id' => $step->id,
                     'uid' => $step->uid,
                     'kind' => $step->kind->value,
-                    'config' => $config,
+                    'config' => self::prepareStepConfigForForm($step->kind, $config),
                     'next_step_uid' => $step->next_step_uid,
                     'alt_next_step_uid' => $step->alt_next_step_uid,
                 ];
             })
             ->toArray();
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @return array<string, mixed>
+     */
+    private static function prepareStepConfigForForm(AutomationStepKind $kind, array $config): array
+    {
+        return match ($kind) {
+            AutomationStepKind::SendEmail => [
+                'template_id' => $config['template_id'] ?? null,
+            ],
+            AutomationStepKind::Delay => [
+                'minutes' => $config['minutes'] ?? null,
+            ],
+            AutomationStepKind::SendPushNotification => [
+                'title' => $config['title'] ?? null,
+                'body' => $config['body'] ?? null,
+                'data' => is_array($config['data'] ?? null) ? $config['data'] : [],
+            ],
+            default => [],
+        };
     }
 
     public static function validateSteps(array $steps): void
@@ -329,6 +396,14 @@ class AutomationResource extends Resource
 
         $processed = [];
 
+        $workspaceTemplateIds = [];
+        if (function_exists('currentWorkspace') && null !== currentWorkspace()) {
+            $workspaceTemplateIds = array_map(
+                static fn($id): int => (int) $id,
+                currentWorkspace()->templates()->pluck('id')->all()
+            );
+        }
+
         foreach ($steps as $step) {
             $uid = trim((string) ($step['uid'] ?? ''));
             $kind = $step['kind'] ?? null;
@@ -349,31 +424,34 @@ class AutomationResource extends Resource
                 ]);
             }
 
-            $config = $step['config'] ?? null;
+            $config = $step['config'] ?? [];
 
             if (is_string($config)) {
                 $trimmedConfig = trim($config);
 
                 if ($trimmedConfig === '') {
-                    $config = null;
+                    $config = [];
                 } else {
                     $decodedConfig = json_decode($trimmedConfig, true);
 
-                    if (json_last_error() !== JSON_ERROR_NONE) {
+                    if (json_last_error() !== JSON_ERROR_NONE || ! is_array($decodedConfig)) {
                         throw ValidationException::withMessages([
-                            'steps' => 'Step config must be valid JSON.',
+                            'steps' => 'Step config must be an array.',
                         ]);
                     }
 
                     $config = $decodedConfig;
                 }
-            } elseif ($config === [] || $config === '') {
-                $config = null;
-            } elseif ($config !== null && ! is_array($config)) {
+            } elseif ($config === null) {
+                $config = [];
+            } elseif (! is_array($config)) {
                 throw ValidationException::withMessages([
-                    'steps' => 'Step config must be valid JSON.',
+                    'steps' => 'Step config must be an array.',
                 ]);
             }
+
+            $kindEnum = AutomationStepKind::from($kind);
+            $config = self::prepareStepConfigForStorage($kindEnum, $config, $workspaceTemplateIds);
 
             $next = trim((string) ($step['next_step_uid'] ?? ''));
             $alt = trim((string) ($step['alt_next_step_uid'] ?? ''));
@@ -389,5 +467,148 @@ class AutomationResource extends Resource
         }
 
         return $processed;
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array<int, int> $workspaceTemplateIds
+     */
+    private static function prepareStepConfigForStorage(AutomationStepKind $kind, array $config, array $workspaceTemplateIds): ?array
+    {
+        return match ($kind) {
+            AutomationStepKind::SendEmail => self::prepareSendEmailConfigForStorage($config, $workspaceTemplateIds),
+            AutomationStepKind::Delay => self::prepareDelayConfigForStorage($config),
+            AutomationStepKind::SendPushNotification => self::preparePushNotificationConfigForStorage($config),
+            default => $config === [] ? null : $config,
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @param array<int, int> $workspaceTemplateIds
+     * @return array{template_id: int}
+     */
+    private static function prepareSendEmailConfigForStorage(array $config, array $workspaceTemplateIds): array
+    {
+        $templateId = $config['template_id'] ?? null;
+
+        if ($templateId === null || $templateId === '') {
+            throw ValidationException::withMessages([
+                'steps' => 'Select a template for email steps.',
+            ]);
+        }
+
+        if (! is_int($templateId)) {
+            if (is_numeric($templateId)) {
+                $templateId = (int) $templateId;
+            } else {
+                throw ValidationException::withMessages([
+                    'steps' => 'Select a valid template for email steps.',
+                ]);
+            }
+        }
+
+        if ($templateId <= 0) {
+            throw ValidationException::withMessages([
+                'steps' => 'Select a valid template for email steps.',
+            ]);
+        }
+
+        if ($workspaceTemplateIds !== [] && ! in_array($templateId, $workspaceTemplateIds, true)) {
+            throw ValidationException::withMessages([
+                'steps' => 'Select a template available in this workspace.',
+            ]);
+        }
+
+        return ['template_id' => $templateId];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @return array{minutes: int}
+     */
+    private static function prepareDelayConfigForStorage(array $config): array
+    {
+        $minutes = $config['minutes'] ?? null;
+
+        if ($minutes === null || $minutes === '') {
+            throw ValidationException::withMessages([
+                'steps' => 'Delay steps require a duration in minutes.',
+            ]);
+        }
+
+        if (! is_numeric($minutes)) {
+            throw ValidationException::withMessages([
+                'steps' => 'Delay durations must be numeric.',
+            ]);
+        }
+
+        $minutes = (int) $minutes;
+
+        if ($minutes < 0) {
+            throw ValidationException::withMessages([
+                'steps' => 'Delay durations cannot be negative.',
+            ]);
+        }
+
+        return ['minutes' => $minutes];
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @return array{title: string, body: string, data?: array<string, string>}
+     */
+    private static function preparePushNotificationConfigForStorage(array $config): array
+    {
+        $title = isset($config['title']) ? trim((string) $config['title']) : '';
+        $body = isset($config['body']) ? trim((string) $config['body']) : '';
+
+        if ($title === '' || $body === '') {
+            throw ValidationException::withMessages([
+                'steps' => 'Push notification steps require a title and body.',
+            ]);
+        }
+
+        $data = $config['data'] ?? [];
+        if ($data === null) {
+            $data = [];
+        } elseif (! is_array($data)) {
+            throw ValidationException::withMessages([
+                'steps' => 'Push notification payload must be key-value pairs.',
+            ]);
+        }
+
+        $normalizedData = [];
+        foreach ($data as $key => $value) {
+            $normalizedKey = trim((string) $key);
+
+            if ($normalizedKey === '') {
+                continue;
+            }
+
+            if ($value === null) {
+                $normalizedData[$normalizedKey] = null;
+                continue;
+            }
+
+            if (! is_scalar($value)) {
+                throw ValidationException::withMessages([
+                    'steps' => 'Push notification payload values must be strings.',
+                ]);
+            }
+
+            $normalizedData[$normalizedKey] = (string) $value;
+        }
+
+        $result = [
+            'title' => $title,
+            'body' => $body,
+        ];
+
+        if ($normalizedData !== []) {
+            $result['data'] = $normalizedData;
+        }
+
+        return $result;
     }
 }
