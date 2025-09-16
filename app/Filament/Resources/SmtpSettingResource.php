@@ -20,6 +20,7 @@ class SmtpSettingResource extends Resource
     protected static ?string $model = SmtpSetting::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-m-envelope';
 
     public static function form(Schema $schema): Schema
     {

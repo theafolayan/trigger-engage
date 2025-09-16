@@ -21,6 +21,7 @@ class PushSettingResource extends Resource
     protected static ?string $model = PushSetting::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-m-bell';
 
     public static function form(Schema $schema): Schema
     {

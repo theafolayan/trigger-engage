@@ -25,6 +25,7 @@ use InvalidArgumentException;
 class AutomationResource extends Resource
 {
     protected static ?string $model = Automation::class;
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-m-cog-6-tooth';
 
     public static function form(Schema $schema): Schema
     {
@@ -76,7 +77,7 @@ class AutomationResource extends Resource
                             Forms\Components\TextInput::make('uid')
                                 ->label('UID')
                                 ->required()
-                                ->default(fn (): string => Str::uuid()->toString())
+                                ->default(fn(): string => Str::uuid()->toString())
                                 ->maxLength(255),
                             Forms\Components\Select::make('kind')
                                 ->label('Kind')
@@ -183,7 +184,7 @@ class AutomationResource extends Resource
             ]);
         }
 
-        $validatorInput = array_map(static fn (array $step): array => [
+        $validatorInput = array_map(static fn(array $step): array => [
             'uid' => $step['uid'],
             'next_step_uid' => $step['next_step_uid'] ?? null,
             'alt_next_step_uid' => $step['alt_next_step_uid'] ?? null,
@@ -324,7 +325,7 @@ class AutomationResource extends Resource
 
     private static function prepareStepsForStorage(array $steps): array
     {
-        $kinds = array_map(static fn (AutomationStepKind $kind): string => $kind->value, AutomationStepKind::cases());
+        $kinds = array_map(static fn(AutomationStepKind $kind): string => $kind->value, AutomationStepKind::cases());
 
         $processed = [];
 
