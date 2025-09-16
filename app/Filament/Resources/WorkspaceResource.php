@@ -19,6 +19,7 @@ class WorkspaceResource extends Resource
     protected static ?string $model = Workspace::class;
 
     protected static string|\UnitEnum|null $navigationGroup = 'Settings';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-m-building-office';
 
     public static function form(Schema $schema): Schema
     {
@@ -50,4 +51,3 @@ class WorkspaceResource extends Resource
         return parent::getEloquentQuery()->where('account_id', auth()->user()->account_id);
     }
 }
-

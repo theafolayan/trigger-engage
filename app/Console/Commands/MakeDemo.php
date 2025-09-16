@@ -42,6 +42,7 @@ class MakeDemo extends Command
             'account_id' => $account->id,
             'name' => 'Demo User',
             'email' => 'demo@example.com',
+            'is_admin' => true,
             'password' => 'password',
         ]);
 
@@ -88,6 +89,17 @@ class MakeDemo extends Command
             'uid' => (string) Str::uuid(),
             'kind' => AutomationStepKind::SendEmail->value,
             'config' => ['template_id' => $template->id],
+        ]);
+
+        // Add a default PushSetting for the demo workspace
+        \App\Models\PushSetting::create([
+            'workspace_id' => $workspace->id,
+            'driver' => 'expo',
+            'api_key_encrypted' => encrypt('demo-key'),
+            'app_id' => 'demo-app-id',
+            'project_id' => 'demo-project',
+            'meta' => ['example' => 'value'],
+            'is_active' => true,
         ]);
 
         $this->info('Demo data seeded.');
