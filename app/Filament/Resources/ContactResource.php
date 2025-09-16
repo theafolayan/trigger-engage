@@ -95,12 +95,19 @@ class ContactResource extends Resource
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(static function (?ContactStatus $status): string {
+                    ->formatStateUsing(static function ($status): string {
                         if ($status === null) {
                             return '';
                         }
 
-                        return Str::title($status->value);
+                        // If the state is an enum instance, use its value; otherwise assume string
+                        if (is_object($status) && method_exists($status, 'value')) {
+                            $value = $status->value;
+                        } else {
+                            $value = (string) $status;
+                        }
+
+                        return Str::title($value);
                     }),
                 Tables\Columns\TextColumn::make('lists_count')
                     ->label('Lists')

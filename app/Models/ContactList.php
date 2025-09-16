@@ -25,7 +25,7 @@ class ContactList extends Model
 
     public function contacts(): BelongsToMany
     {
-        return $this->belongsToMany(Contact::class, 'list_contact')
+        return $this->belongsToMany(Contact::class, 'list_contact', 'list_id', 'contact_id')
             ->withPivot(['subscribed_at', 'unsubscribed_at', 'meta']);
     }
 }
