@@ -48,14 +48,14 @@ it('allows admins to create automations', function (): void {
                 [
                     'uid' => 'start',
                     'kind' => AutomationStepKind::SendEmail->value,
-                    'config' => json_encode(['template_id' => $template->id], JSON_UNESCAPED_SLASHES),
+                    'config' => ['template_id' => $template->id],
                     'next_step_uid' => 'delay',
                     'alt_next_step_uid' => null,
                 ],
                 [
                     'uid' => 'delay',
                     'kind' => AutomationStepKind::Delay->value,
-                    'config' => json_encode(['minutes' => 10], JSON_UNESCAPED_SLASHES),
+                    'config' => ['minutes' => 10],
                     'next_step_uid' => null,
                     'alt_next_step_uid' => null,
                 ],
