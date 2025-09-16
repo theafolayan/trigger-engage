@@ -30,12 +30,14 @@ class PushSettingResource extends Resource
                     'one_signal' => 'OneSignal',
                     'expo' => 'Expo',
                 ])
-                ->required(),
+                ->required()->live(),
             Forms\Components\TextInput::make('api_key')
                 ->password()
                 ->afterStateHydrated(fn(Forms\Components\TextInput $component) => $component->state('')),
             Forms\Components\TextInput::make('app_id'),
-            Forms\Components\TextInput::make('project_id'),
+            Forms\Components\TextInput::make('project_id')
+                ->live()
+                ->visible(fn($get) => $get('driver') !== 'one_signal'),
             Forms\Components\Toggle::make('is_active'),
         ]);
     }

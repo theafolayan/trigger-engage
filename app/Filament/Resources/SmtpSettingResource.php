@@ -30,7 +30,14 @@ class SmtpSettingResource extends Resource
             Forms\Components\TextInput::make('password')
                 ->password()
                 ->afterStateHydrated(fn(Forms\Components\TextInput $component) => $component->state('')),
-            Forms\Components\TextInput::make('encryption'),
+            Forms\Components\Select::make('encryption')
+                ->options([
+                    'tls' => 'TLS',
+                    'ssl' => 'SSL',
+                    'none' => 'None',
+                ])
+                ->default('tls')
+                ->required(),
             Forms\Components\TextInput::make('from_name'),
             Forms\Components\TextInput::make('from_email')->email()->required(),
             Forms\Components\TextInput::make('reply_to')->email(),
