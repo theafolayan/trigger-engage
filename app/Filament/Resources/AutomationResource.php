@@ -54,18 +54,57 @@ class AutomationResource extends Resource
                 ->schema([
                     Forms\Components\Repeater::make('conditions')
                         ->schema([
-                            Forms\Components\TextInput::make('path')
-                                ->label('Path')
-                                ->maxLength(255),
+                            Forms\Components\Select::make('attribute')
+                                ->label('Attribute')
+                                ->options(self::conditionAttributeOptions())
+                                ->searchable()
+                                ->placeholder('Select attribute')
+                                ->required()
+                                ->reactive(),
+                            Forms\Components\TextInput::make('custom_path')
+                                ->label('Custom JSON path')
+                                ->placeholder('e.g. event.payload.plan')
+                                ->maxLength(255)
+                                ->visible(fn (Get $get): bool => $get('attribute') === '__custom__')
+                                ->required(fn (Get $get): bool => $get('attribute') === '__custom__')
+                                ->helperText('Use dot notation to access nested data.'),
                             Forms\Components\Select::make('op')
                                 ->label('Operator')
-                                ->options(self::conditionOperators()),
-                            Forms\Components\Textarea::make('value')
+                                ->options(self::conditionOperators())
+                                ->required()
+                                ->reactive(),
+                            Forms\Components\Select::make('type')
+                                ->label('Value type')
+                                ->options(self::conditionValueTypes())
+                                ->default('string')
+                                ->reactive()
+                                ->visible(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')))
+                                ->required(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op'))),
+                            Forms\Components\TextInput::make('value_text')
                                 ->label('Value')
-                                ->rows(2)
-                                ->helperText('Use JSON for arrays or complex data.'),
+                                ->default('')
+                                ->visible(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'string')
+                                ->required(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'string'),
+                            Forms\Components\TextInput::make('value_number')
+                                ->label('Number')
+                                ->numeric()
+                                ->visible(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'number')
+                                ->required(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'number'),
+                            Forms\Components\Toggle::make('value_boolean')
+                                ->label('Value')
+                                ->inline(false)
+                                ->default(false)
+                                ->visible(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'boolean')
+                                ->required(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'boolean'),
+                            Forms\Components\TagsInput::make('value_array')
+                                ->label('Values')
+                                ->placeholder('Add value and press enter')
+                                ->default([])
+                                ->visible(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'array')
+                                ->required(fn (Get $get): bool => self::operatorRequiresValue((string) $get('op')) && $get('type') === 'array')
+                                ->helperText('Each entry becomes a list item for comparisons like "in" or "contains".'),
                         ])
-                        ->grid(3)
+                        ->grid(1)
                         ->addActionLabel('Add Condition')
                         ->reorderable(true)
                         ->default([]),
@@ -245,22 +284,66 @@ class AutomationResource extends Resource
 
     public static function prepareConditionsForForm(array $conditions): array
     {
-        return array_map(static function (array $condition): array {
-            if (array_key_exists('value', $condition)) {
-                $value = $condition['value'];
+        $knownAttributes = array_keys(self::flattenConditionAttributeOptions());
 
-                if (is_array($value)) {
-                    $condition['value'] = json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) ?: '';
-                } elseif (is_bool($value)) {
-                    $condition['value'] = $value ? 'true' : 'false';
-                } elseif ($value === null) {
-                    $condition['value'] = '';
-                } else {
-                    $condition['value'] = (string) $value;
-                }
+        return array_map(static function (array $condition) use ($knownAttributes): array {
+            $path = isset($condition['path']) ? trim((string) $condition['path']) : '';
+            $op = isset($condition['op']) ? (string) $condition['op'] : '==';
+            $value = $condition['value'] ?? null;
+
+            $attribute = in_array($path, $knownAttributes, true) ? $path : '__custom__';
+            $customPath = $attribute === '__custom__' ? $path : null;
+
+            $type = match (true) {
+                is_bool($value) => 'boolean',
+                is_array($value) => 'array',
+                $value === null => 'null',
+                is_int($value), is_float($value) => 'number',
+                default => 'string',
+            };
+
+            $valueText = '';
+            $valueNumber = null;
+            $valueBoolean = false;
+            $valueArray = [];
+
+            if ($type === 'string' && $value !== null) {
+                $valueText = (string) $value;
+            } elseif ($type === 'number' && $value !== null) {
+                $valueNumber = (string) $value;
+            } elseif ($type === 'boolean') {
+                $valueBoolean = (bool) $value;
+            } elseif ($type === 'array' && is_array($value)) {
+                $valueArray = array_map(
+                    static function ($item): string {
+                        if ($item === null) {
+                            return 'null';
+                        }
+
+                        if (is_bool($item)) {
+                            return $item ? 'true' : 'false';
+                        }
+
+                        if (is_scalar($item)) {
+                            return (string) $item;
+                        }
+
+                        return json_encode($item, JSON_UNESCAPED_SLASHES) ?: '';
+                    },
+                    $value
+                );
             }
 
-            return $condition;
+            return [
+                'attribute' => $attribute,
+                'custom_path' => $customPath,
+                'op' => $op,
+                'type' => $type,
+                'value_text' => $valueText,
+                'value_number' => $valueNumber,
+                'value_boolean' => $valueBoolean,
+                'value_array' => $valueArray,
+            ];
         }, $conditions);
     }
 
@@ -447,11 +530,25 @@ class AutomationResource extends Resource
         $processed = [];
 
         foreach ($conditions as $condition) {
-            $path = trim((string) ($condition['path'] ?? ''));
+            $attribute = is_string($condition['attribute'] ?? null) ? trim((string) $condition['attribute']) : '';
+            $customPath = is_string($condition['custom_path'] ?? null) ? trim((string) $condition['custom_path']) : '';
             $op = trim((string) ($condition['op'] ?? ''));
-            $value = $condition['value'] ?? null;
 
-            if ($path === '' && $op === '' && ($value === null || $value === '')) {
+            $path = $attribute === '__custom__'
+                ? $customPath
+                : ($attribute !== '' ? $attribute : $customPath);
+
+            $requiresValue = $op !== '' && self::operatorRequiresValue($op);
+
+            $hasValuePayload = $requiresValue && (
+                array_key_exists('value_text', $condition)
+                || array_key_exists('value_number', $condition)
+                || array_key_exists('value_boolean', $condition)
+                || array_key_exists('value_array', $condition)
+                || array_key_exists('type', $condition)
+            );
+
+            if ($path === '' && $op === '' && ! $hasValuePayload) {
                 continue;
             }
 
@@ -467,28 +564,191 @@ class AutomationResource extends Resource
                 ]);
             }
 
-            if (is_string($value)) {
-                $trimmed = trim($value);
-                if ($trimmed === '') {
-                    $value = null;
-                } else {
-                    $decoded = json_decode($trimmed, true);
-                    if (json_last_error() === JSON_ERROR_NONE) {
-                        $value = $decoded;
-                    } else {
-                        $value = $trimmed;
-                    }
+            $value = null;
+
+            if ($requiresValue) {
+                $type = is_string($condition['type'] ?? null) ? $condition['type'] : 'string';
+
+                if (! array_key_exists($type, self::conditionValueTypes())) {
+                    throw ValidationException::withMessages([
+                        'conditions' => 'Invalid value type selected for a condition.',
+                    ]);
                 }
+
+                $value = match ($type) {
+                    'number' => self::normalizeNumberValue($condition['value_number'] ?? null),
+                    'boolean' => (bool) ($condition['value_boolean'] ?? false),
+                    'array' => self::normalizeArrayValue($condition['value_array'] ?? []),
+                    'null' => null,
+                    default => self::normalizeStringValue($condition['value_text'] ?? null),
+                };
             }
 
-            $processed[] = [
+            $payload = [
                 'path' => $path,
                 'op' => $op,
-                'value' => $value,
             ];
+
+            if ($requiresValue) {
+                $payload['value'] = $value;
+            }
+
+            $processed[] = $payload;
         }
 
         return $processed;
+    }
+
+    private static function conditionAttributeOptions(): array
+    {
+        return [
+            'Event' => [
+                'event.name' => 'Event · Name',
+                'event.occurred_at' => 'Event · Occurred at',
+                'event.id' => 'Event · ID',
+            ],
+            'Contact' => [
+                'contact.email' => 'Contact · Email',
+                'contact.first_name' => 'Contact · First name',
+                'contact.last_name' => 'Contact · Last name',
+                'contact.status' => 'Contact · Status',
+                'contact.tags' => 'Contact · Tags',
+                'contact.lists' => 'Contact · Lists',
+            ],
+            '__custom__' => 'Advanced: Custom JSON path',
+        ];
+    }
+
+    private static function flattenConditionAttributeOptions(): array
+    {
+        $options = self::conditionAttributeOptions();
+        $flat = [];
+
+        foreach ($options as $key => $value) {
+            if ($key === '__custom__') {
+                continue;
+            }
+
+            if (is_array($value)) {
+                foreach ($value as $nestedKey => $nestedValue) {
+                    if (is_array($nestedValue)) {
+                        foreach ($nestedValue as $deepKey => $deepValue) {
+                            $flat[$deepKey] = $deepValue;
+                        }
+                    } else {
+                        $flat[$nestedKey] = $nestedValue;
+                    }
+                }
+            } else {
+                $flat[$key] = $value;
+            }
+        }
+
+        return $flat;
+    }
+
+    private static function conditionValueTypes(): array
+    {
+        return [
+            'string' => 'Text',
+            'number' => 'Number',
+            'boolean' => 'Boolean',
+            'array' => 'List of values',
+            'null' => 'Empty (null)',
+        ];
+    }
+
+    private static function operatorRequiresValue(string $operator): bool
+    {
+        return $operator !== 'exists';
+    }
+
+    private static function normalizeStringValue(mixed $value): string
+    {
+        if ($value === null) {
+            throw ValidationException::withMessages([
+                'conditions' => 'A text value is required for this condition.',
+            ]);
+        }
+
+        $string = (string) $value;
+
+        if ($string === '') {
+            throw ValidationException::withMessages([
+                'conditions' => 'A text value is required for this condition.',
+            ]);
+        }
+
+        return $string;
+    }
+
+    private static function normalizeNumberValue(mixed $value): int|float
+    {
+        if ($value === null || $value === '') {
+            throw ValidationException::withMessages([
+                'conditions' => 'A number is required for this condition.',
+            ]);
+        }
+
+        if (! is_numeric($value)) {
+            throw ValidationException::withMessages([
+                'conditions' => 'Provide a valid numeric value for this condition.',
+            ]);
+        }
+
+        $numericString = is_string($value) ? $value : (string) $value;
+
+        $isIntLike = filter_var($numericString, FILTER_VALIDATE_INT) !== false;
+
+        $usesExponent = str_contains($numericString, 'e') || str_contains($numericString, 'E');
+
+        if ($isIntLike && ! $usesExponent) {
+            return (int) $numericString;
+        }
+
+        return (float) $numericString;
+    }
+
+    private static function normalizeArrayValue(mixed $value): array
+    {
+        if (! is_array($value)) {
+            throw ValidationException::withMessages([
+                'conditions' => 'Add at least one entry to the list for this condition.',
+            ]);
+        }
+
+        $items = [];
+
+        foreach ($value as $item) {
+            if (is_string($item)) {
+                $trimmed = trim($item);
+
+                if ($trimmed === '') {
+                    continue;
+                }
+
+                $decoded = json_decode($trimmed, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $items[] = $decoded;
+                } else {
+                    $items[] = $trimmed;
+                }
+
+                continue;
+            }
+
+            if (is_scalar($item) || $item === null) {
+                $items[] = $item;
+            }
+        }
+
+        if ($items === []) {
+            throw ValidationException::withMessages([
+                'conditions' => 'Add at least one entry to the list for this condition.',
+            ]);
+        }
+
+        return $items;
     }
 
     private static function prepareStepsForStorage(array $steps): array

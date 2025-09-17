@@ -40,14 +40,24 @@ it('allows admins to create automations', function (): void {
             'timezone' => 'UTC',
             'conditions' => [
                 [
-                    'path' => 'event.name',
+                    'attribute' => 'event.name',
+                    'custom_path' => null,
                     'op' => '==',
-                    'value' => 'signup',
+                    'type' => 'string',
+                    'value_text' => 'signup',
+                    'value_number' => null,
+                    'value_boolean' => false,
+                    'value_array' => [],
                 ],
                 [
-                    'path' => 'contact.tags',
+                    'attribute' => 'contact.tags',
+                    'custom_path' => null,
                     'op' => 'in',
-                    'value' => '["vip","beta"]',
+                    'type' => 'array',
+                    'value_text' => '',
+                    'value_number' => null,
+                    'value_boolean' => false,
+                    'value_array' => ['vip', 'beta'],
                 ],
             ],
             'steps' => [
