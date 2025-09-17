@@ -12,14 +12,15 @@ use App\Filament\Resources\AutomationResource\Pages\ListAutomations;
 use App\Models\Automation;
 use App\Models\AutomationStep;
 use Filament\Forms;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Grid;
+use Filament\Schemas\Components\Group as SchemaGroup;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
@@ -76,10 +77,50 @@ class AutomationResource extends Resource
                     Forms\Components\Repeater::make('steps')
                         ->schema([
                             Forms\Components\Hidden::make('id'),
-                            Forms\Components\TextInput::make('uid')
-                                ->label('UID')
+                            Forms\Components\TextInput::make('label')
+                                ->label('Step name')
                                 ->required()
-                                ->default(fn(): string => Str::uuid()->toString())
+                                ->maxLength(255)
+                                ->live(onBlur: true)
+                                ->afterStateUpdated(function (?string $state, Get $get, Set $set): void {
+                                    if ($get('allow_uid_edit')) {
+                                        return;
+                                    }
+
+                                    $slug = Str::slug((string) $state);
+
+                                    if ($slug === '') {
+                                        return;
+                                    }
+
+                                    $set('uid', $slug);
+                                })
+                                ->columnSpan(2),
+                            Forms\Components\Toggle::make('allow_uid_edit')
+                                ->label('Edit UID manually')
+                                ->inline(false)
+                                ->default(false)
+                                ->live()
+                                ->dehydrated(false)
+                                ->afterStateUpdated(function (bool $state, Get $get, Set $set): void {
+                                    if ($state) {
+                                        return;
+                                    }
+
+                                    $label = $get('label');
+                                    $slug = Str::slug((string) $label);
+
+                                    if ($slug === '') {
+                                        return;
+                                    }
+
+                                    $set('uid', $slug);
+                                }),
+                            Forms\Components\TextInput::make('uid')
+                                ->label('Step UID')
+                                ->required()
+                                ->default(fn(): string => Str::slug(Str::uuid()->toString()))
+                                ->disabled(fn (Get $get): bool => ! $get('allow_uid_edit'))
                                 ->maxLength(255),
                             Forms\Components\Select::make('kind')
                                 ->label('Kind')
@@ -89,7 +130,7 @@ class AutomationResource extends Resource
                                 ->afterStateUpdated(function (Set $set): void {
                                     $set('config', []);
                                 }),
-                            Forms\Components\Group::make()
+                            SchemaGroup::make()
                                 ->schema([
                                     Forms\Components\Select::make('config.template_id')
                                         ->label('Template')
@@ -101,7 +142,7 @@ class AutomationResource extends Resource
                                 ])
                                 ->visible(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendEmail->value)
                                 ->columnSpan(2),
-                            Forms\Components\Group::make()
+                            SchemaGroup::make()
                                 ->schema([
                                     Forms\Components\TextInput::make('config.minutes')
                                         ->label('Delay (minutes)')
@@ -112,7 +153,7 @@ class AutomationResource extends Resource
                                 ])
                                 ->visible(fn (Get $get): bool => $get('kind') === AutomationStepKind::Delay->value)
                                 ->columnSpan(2),
-                            Forms\Components\Group::make()
+                            SchemaGroup::make()
                                 ->schema([
                                     Forms\Components\TextInput::make('config.title')
                                         ->label('Title')
@@ -132,12 +173,38 @@ class AutomationResource extends Resource
                                 ])
                                 ->visible(fn (Get $get): bool => $get('kind') === AutomationStepKind::SendPushNotification->value)
                                 ->columnSpan(2),
-                            Forms\Components\TextInput::make('next_step_uid')
-                                ->label('Next Step UID')
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('alt_next_step_uid')
-                                ->label('Alternate Next Step UID')
-                                ->maxLength(255),
+                            Forms\Components\Select::make('next_step_uid')
+                                ->label('Next Step')
+                                ->placeholder('None')
+                                ->searchable()
+                                ->reactive()
+                                ->options(function (Get $get): array {
+                                    $steps = $get('../../steps');
+
+                                    if (! is_array($steps)) {
+                                        $steps = [];
+                                    }
+
+                                    $currentUid = $get('uid');
+
+                                    return self::buildStepLinkOptions($steps, is_string($currentUid) ? $currentUid : null);
+                                }),
+                            Forms\Components\Select::make('alt_next_step_uid')
+                                ->label('Alternate Next Step')
+                                ->placeholder('None')
+                                ->searchable()
+                                ->reactive()
+                                ->options(function (Get $get): array {
+                                    $steps = $get('../../steps');
+
+                                    if (! is_array($steps)) {
+                                        $steps = [];
+                                    }
+
+                                    $currentUid = $get('uid');
+
+                                    return self::buildStepLinkOptions($steps, is_string($currentUid) ? $currentUid : null);
+                                }),
                         ])
                         ->grid(2)
                         ->addActionLabel('Add Step')
@@ -211,6 +278,7 @@ class AutomationResource extends Resource
 
                 return [
                     'id' => $step->id,
+                    'label' => self::defaultStepLabel($step->uid),
                     'uid' => $step->uid,
                     'kind' => $step->kind->value,
                     'config' => self::prepareStepConfigForForm($step->kind, $config),
@@ -219,6 +287,13 @@ class AutomationResource extends Resource
                 ];
             })
             ->toArray();
+    }
+
+    private static function defaultStepLabel(string $uid): string
+    {
+        $label = trim(Str::headline(str_replace(['_', '-'], ' ', $uid)));
+
+        return $label === '' ? 'Step' : $label;
     }
 
     /**
@@ -339,6 +414,32 @@ class AutomationResource extends Resource
         return $options;
     }
 
+    /**
+     * @param array<int, array<string, mixed>> $steps
+     */
+    private static function buildStepLinkOptions(array $steps, ?string $currentUid): array
+    {
+        $options = [];
+
+        foreach ($steps as $step) {
+            if (! is_array($step)) {
+                continue;
+            }
+
+            $uid = trim((string) ($step['uid'] ?? ''));
+
+            if ($uid === '' || ($currentUid !== null && $uid === $currentUid)) {
+                continue;
+            }
+
+            $label = isset($step['label']) ? trim((string) $step['label']) : '';
+
+            $options[$uid] = $label !== '' ? sprintf('%s (%s)', $label, $uid) : $uid;
+        }
+
+        return $options;
+    }
+
     private static function prepareConditionsForStorage(array $conditions): array
     {
         $operators = array_keys(self::conditionOperators());
@@ -405,11 +506,20 @@ class AutomationResource extends Resource
         }
 
         foreach ($steps as $step) {
-            $uid = trim((string) ($step['uid'] ?? ''));
             $kind = $step['kind'] ?? null;
+            $label = isset($step['label']) ? trim((string) $step['label']) : '';
+            $uid = isset($step['uid']) ? trim((string) $step['uid']) : '';
 
-            if ($uid === '' && ($kind === null || $kind === '')) {
+            if ($uid === '' && $label === '' && ($kind === null || $kind === '')) {
                 continue;
+            }
+
+            if ($uid === '') {
+                $uid = $label !== '' ? Str::slug($label) : '';
+            }
+
+            if ($uid === '') {
+                $uid = Str::slug(Str::uuid()->toString());
             }
 
             if ($uid === '' || $kind === null || $kind === '') {
