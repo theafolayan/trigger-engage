@@ -70,4 +70,19 @@ class Workspace extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function ugcTasks(): HasMany
+    {
+        return $this->hasMany(UgcTask::class);
+    }
+
+    public function ugcApplications(): HasMany
+    {
+        return $this->hasMany(UgcApplication::class);
+    }
+
+    public function ugcSubmissions(): HasMany
+    {
+        return $this->hasMany(UgcSubmission::class);
+    }
 }

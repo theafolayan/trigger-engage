@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Filament\AdminPanelProvider;
+use App\Filament\BusinessPanelProvider;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\WorkspaceResolve;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withProviders([
         AdminPanelProvider::class,
+        BusinessPanelProvider::class,
         \App\Providers\AuthDebugServiceProvider::class,
     ])
     ->withExceptions(function (Exceptions $exceptions): void {
