@@ -11,6 +11,7 @@ use App\Models\Template;
 use App\Models\User;
 use App\Models\Workspace;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Livewire\Livewire;
 
 use function Pest\Laravel\actingAs;
@@ -25,6 +26,11 @@ it('allows admins to create automations', function (): void {
 
     actingAs($admin);
     app()->instance('currentWorkspace', $workspace);
+
+    $startLabel = 'Send welcome email';
+    $startUid = Str::slug($startLabel);
+    $delayLabel = 'Delay before follow-up';
+    $delayUid = Str::slug($delayLabel);
 
     Livewire::test(CreateAutomation::class)
         ->fillForm([
@@ -46,14 +52,16 @@ it('allows admins to create automations', function (): void {
             ],
             'steps' => [
                 [
-                    'uid' => 'start',
+                    'label' => $startLabel,
+                    'uid' => $startUid,
                     'kind' => AutomationStepKind::SendEmail->value,
                     'config' => ['template_id' => $template->id],
-                    'next_step_uid' => 'delay',
+                    'next_step_uid' => $delayUid,
                     'alt_next_step_uid' => null,
                 ],
                 [
-                    'uid' => 'delay',
+                    'label' => $delayLabel,
+                    'uid' => $delayUid,
                     'kind' => AutomationStepKind::Delay->value,
                     'config' => ['minutes' => 10],
                     'next_step_uid' => null,
@@ -73,12 +81,12 @@ it('allows admins to create automations', function (): void {
             ['path' => 'contact.tags', 'op' => 'in', 'value' => ['vip', 'beta']],
         ]);
 
-    $start = AutomationStep::where('automation_id', $automation->id)->where('uid', 'start')->firstOrFail();
-    $delay = AutomationStep::where('automation_id', $automation->id)->where('uid', 'delay')->firstOrFail();
+    $start = AutomationStep::where('automation_id', $automation->id)->where('uid', $startUid)->firstOrFail();
+    $delay = AutomationStep::where('automation_id', $automation->id)->where('uid', $delayUid)->firstOrFail();
 
     expect($start->kind)->toBe(AutomationStepKind::SendEmail)
         ->and($start->config)->toBe(['template_id' => $template->id])
-        ->and($start->next_step_uid)->toBe('delay');
+        ->and($start->next_step_uid)->toBe($delayUid);
 
     expect($delay->kind)->toBe(AutomationStepKind::Delay)
         ->and($delay->config)->toBe(['minutes' => 10])
