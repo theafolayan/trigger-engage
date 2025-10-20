@@ -1,5 +1,11 @@
 <?php
 
+use App\Models\Account;
+use App\Models\Plan;
+use App\Models\TwitterAccount;
+use App\Models\User;
+use App\Models\Workspace;
+use Illuminate\Support\Str;
 use Predis\Client;
 
 /*
@@ -16,6 +22,9 @@ use Predis\Client;
 pest()->extend(Tests\TestCase::class)
  // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
+
+pest()->extend(Tests\TestCase::class)
+    ->in('Unit/Twitter');
 
 uses()->beforeEach(function (): void {
     (new Client())->flushdb();
@@ -46,6 +55,39 @@ expect()->extend('toBeOne', function () {
 | global functions to help you to reduce the number of lines of code in your test files.
 |
 */
+
+function createTwitterAccountForPlanName(string $planName, array $attributes = []): TwitterAccount
+{
+    $plan = Plan::factory()->create(['name' => $planName]);
+
+    return createTwitterAccountForPlan($plan, $attributes);
+}
+
+function createTwitterAccountForPlan(Plan $plan, array $attributes = []): TwitterAccount
+{
+    $account = Account::factory()->for($plan, 'plan')->create();
+    $workspace = Workspace::factory()->for($account, 'account')->create();
+    $user = User::factory()->for($workspace)->create([
+        'account_id' => $account->id,
+    ]);
+
+    $defaults = [
+        'workspace_id' => $workspace->id,
+        'user_id' => $user->id,
+        'twitter_id' => (string) Str::random(12),
+        'username' => Str::lower(Str::random(8)),
+        'name' => 'Test Twitter Account',
+        'profile_image_url' => null,
+        'scopes' => [],
+        'access_token' => 'token-'.Str::random(16),
+        'refresh_token' => null,
+        'token_expires_at' => now()->addHour(),
+        'connected_at' => now(),
+        'disconnected_at' => null,
+    ];
+
+    return TwitterAccount::create(array_merge($defaults, $attributes));
+}
 
 function something()
 {

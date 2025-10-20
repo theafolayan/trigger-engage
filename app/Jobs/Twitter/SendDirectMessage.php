@@ -18,10 +18,6 @@ class SendDirectMessage implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $connection;
-
-    public string $queue;
-
     public function __construct(
         public TwitterAccount $twitterAccount,
         public string $participantId,

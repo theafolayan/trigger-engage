@@ -16,10 +16,6 @@ class DispatchFollowerPolling implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $connection;
-
-    public string $queue;
-
     public function __construct(public string $planName)
     {
         $this->connection = config('twitter.queues.connection', 'redis');
