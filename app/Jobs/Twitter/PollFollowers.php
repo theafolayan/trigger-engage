@@ -43,60 +43,76 @@ class PollFollowers implements ShouldQueue
         }
 
         $url = sprintf('%s/2/users/%s/followers', config('twitter.base_url'), $account->twitter_id);
-        $response = Http::withToken($token)
-            ->acceptJson()
-            ->get($url, [
+        $paginationToken = null;
+        $welcomeMessage = config('twitter.dm.welcome_message');
+        $queueConnection = config('twitter.queues.connection', 'redis');
+        $dmQueue = config('twitter.queues.dm_queue', 'twitter-dm');
+
+        do {
+            $query = [
                 'max_results' => config('twitter.polling.page_size'),
                 'user.fields' => 'id,name,username',
-            ]);
+            ];
 
-        if ($response->failed()) {
-            Log::error('Twitter followers API request failed', [
-                'twitter_account_id' => $account->id,
-                'status' => $response->status(),
-                'body' => $response->json(),
-            ]);
-            return;
-        }
-
-        $followers = $response->json('data', []);
-        if (! is_array($followers)) {
-            Log::warning('Twitter followers API returned unexpected payload', [
-                'twitter_account_id' => $account->id,
-            ]);
-            return;
-        }
-
-        $welcomeMessage = config('twitter.dm.welcome_message');
-        foreach ($followers as $follower) {
-            $followerId = $follower['id'] ?? null;
-            if ($followerId === null) {
-                continue;
+            if ($paginationToken !== null) {
+                $query['pagination_token'] = $paginationToken;
             }
 
-            $record = TwitterFollower::query()->firstOrCreate(
-                [
+            $response = Http::withToken($token)
+                ->acceptJson()
+                ->get($url, $query);
+
+            if ($response->failed()) {
+                Log::error('Twitter followers API request failed', [
                     'twitter_account_id' => $account->id,
-                    'follower_id' => $followerId,
-                ],
-                [
-                    'username' => $follower['username'] ?? null,
-                    'name' => $follower['name'] ?? null,
-                    'seen_at' => Carbon::now(),
-                ],
-            );
+                    'status' => $response->status(),
+                    'body' => $response->json(),
+                ]);
 
-            if (! $record->wasRecentlyCreated) {
-                continue;
+                return;
             }
 
-            SendDirectMessage::dispatch(
-                $account,
-                $followerId,
-                $welcomeMessage,
-            )->onConnection(config('twitter.queues.connection', 'redis'))
-                ->onQueue(config('twitter.queues.dm_queue', 'twitter-dm'));
-        }
+            $followers = $response->json('data', []);
+            if (! is_array($followers)) {
+                Log::warning('Twitter followers API returned unexpected payload', [
+                    'twitter_account_id' => $account->id,
+                ]);
+
+                return;
+            }
+
+            foreach ($followers as $follower) {
+                $followerId = $follower['id'] ?? null;
+                if ($followerId === null) {
+                    continue;
+                }
+
+                $record = TwitterFollower::query()->firstOrCreate(
+                    [
+                        'twitter_account_id' => $account->id,
+                        'follower_id' => $followerId,
+                    ],
+                    [
+                        'username' => $follower['username'] ?? null,
+                        'name' => $follower['name'] ?? null,
+                        'seen_at' => Carbon::now(),
+                    ],
+                );
+
+                if (! $record->wasRecentlyCreated) {
+                    continue;
+                }
+
+                SendDirectMessage::dispatch(
+                    $account,
+                    $followerId,
+                    $welcomeMessage,
+                )->onConnection($queueConnection)
+                    ->onQueue($dmQueue);
+            }
+
+            $paginationToken = $response->json('meta.next_token');
+        } while ($paginationToken !== null);
 
         $account->forceFill([
             'last_polled_at' => Carbon::now(),

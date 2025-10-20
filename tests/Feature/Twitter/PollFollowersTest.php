@@ -93,3 +93,60 @@ it('does not dispatch direct messages for followers already seen', function () {
 
     Carbon::setTestNow();
 });
+
+it('paginates through all follower pages to welcome each new follower', function () {
+    Queue::fake();
+    config(['twitter.dm.welcome_message' => 'Welcome aboard!']);
+
+    $account = createTwitterAccountForPlanName('Pro');
+
+    Http::fake([
+        sprintf('%s/2/users/%s/followers*', config('twitter.base_url'), $account->twitter_id) => Http::sequence()
+            ->push([
+                'data' => [
+                    [
+                        'id' => '333',
+                        'username' => 'first-page-user',
+                        'name' => 'First Page User',
+                    ],
+                ],
+                'meta' => [
+                    'next_token' => 'NEXT_TOKEN',
+                ],
+            ], 200)
+            ->push([
+                'data' => [
+                    [
+                        'id' => '444',
+                        'username' => 'second-page-user',
+                        'name' => 'Second Page User',
+                    ],
+                ],
+            ], 200),
+    ]);
+
+    (new PollFollowers($account))->handle();
+
+    $followerIds = TwitterFollower::query()
+        ->where('twitter_account_id', $account->id)
+        ->pluck('follower_id')
+        ->all();
+
+    expect($followerIds)->toBe(['333', '444']);
+
+    $dmQueue = config('twitter.queues.dm_queue');
+
+    Queue::assertPushed(SendDirectMessage::class, 2);
+
+    Queue::assertPushedOn($dmQueue, SendDirectMessage::class, function (SendDirectMessage $job) use ($account) {
+        return $job->twitterAccount->is($account)
+            && $job->participantId === '333'
+            && $job->message === 'Welcome aboard!';
+    });
+
+    Queue::assertPushedOn($dmQueue, SendDirectMessage::class, function (SendDirectMessage $job) use ($account) {
+        return $job->twitterAccount->is($account)
+            && $job->participantId === '444'
+            && $job->message === 'Welcome aboard!';
+    });
+});
