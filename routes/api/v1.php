@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\EventController;
 use App\Http\Controllers\Api\V1\SmtpSettingsController;
 use App\Http\Controllers\Api\V1\StatsController;
 use App\Http\Controllers\Api\V1\TemplateController;
+use App\Http\Controllers\Api\V1\TwitterAccountController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/auth/token', AuthTokenController::class)->middleware('workspace');
@@ -32,6 +33,12 @@ Route::middleware(['auth:sanctum', 'workspace'])->group(function (): void {
     Route::apiResource('templates', TemplateController::class);
     Route::post('/templates/{template}/preview', [TemplateController::class, 'preview']);
     Route::post('/templates/{template}/test', [TemplateController::class, 'test']);
+
+    Route::get('/twitter/accounts', [TwitterAccountController::class, 'index']);
+    Route::post('/twitter/oauth/redirect', [TwitterAccountController::class, 'redirect']);
+    Route::post('/twitter/oauth/callback', [TwitterAccountController::class, 'callback']);
+    Route::post('/twitter/oauth/refresh', [TwitterAccountController::class, 'refresh']);
+    Route::delete('/twitter/accounts/{twitterAccount}', [TwitterAccountController::class, 'destroy']);
 
     Route::middleware('admin')->get('/admin/stats', StatsController::class);
 });

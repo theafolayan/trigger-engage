@@ -10,6 +10,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -65,6 +66,11 @@ class User extends Authenticatable implements FilamentUser
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function twitterAccounts(): HasMany
+    {
+        return $this->hasMany(TwitterAccount::class);
     }
     public function canAccessPanel(Panel $panel): bool
     {
