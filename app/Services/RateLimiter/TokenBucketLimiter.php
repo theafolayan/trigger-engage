@@ -20,7 +20,11 @@ class TokenBucketLimiter
 
     public function consume(int $workspaceId, int $perMinute, int $tokens = 1): bool
     {
-        $key = "rate:" . $workspaceId;
+        return $this->consumeKey("rate:" . $workspaceId, $perMinute, $tokens);
+    }
+
+    public function consumeKey(string $key, int $perMinute, int $tokens = 1): bool
+    {
         $now = microtime(true);
 
         try {
