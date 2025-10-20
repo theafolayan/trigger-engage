@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'twitter' => [
+        'client_id' => env('TWITTER_CLIENT_ID'),
+        'client_secret' => env('TWITTER_CLIENT_SECRET'),
+        'redirect_uri' => env('TWITTER_REDIRECT_URI'),
+        'scopes' => explode(' ', env('TWITTER_SCOPES', 'tweet.read users.read offline.access')),
+    ],
+
 ];

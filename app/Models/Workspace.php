@@ -70,4 +70,9 @@ class Workspace extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    public function twitterAccounts(): HasMany
+    {
+        return $this->hasMany(TwitterAccount::class);
+    }
 }
