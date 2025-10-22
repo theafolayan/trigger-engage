@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TwitterAccount extends Model
 {
@@ -22,7 +21,6 @@ class TwitterAccount extends Model
         'token_expires_at' => 'datetime',
         'connected_at' => 'datetime',
         'disconnected_at' => 'datetime',
-        'last_polled_at' => 'datetime',
     ];
 
     protected $hidden = [
@@ -43,11 +41,6 @@ class TwitterAccount extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function followers(): HasMany
-    {
-        return $this->hasMany(TwitterFollower::class);
     }
 
     protected function accessToken(): Attribute
